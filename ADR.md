@@ -374,7 +374,7 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
 
   - **Users**
     - GET /users
-    - GET /users/:id`
+    - GET /users/:id
     - POST /users/invite
     - PUT /users/:id
     - DELETE /users/:id

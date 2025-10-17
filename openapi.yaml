@@ -406,8 +406,9 @@ paths:
         '504': { $ref: '#/components/responses/GatewayTimeout' }
   /jobs/{job_id}:
     get:
-      summary: Get job status
+      summary: Get job basic information
       operationId: getJob
+      description: Retrieve basic job information without outputs to prevent over-fetching
       tags:
         - Jobs
       security:
@@ -613,6 +614,200 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+  /jobs/{job_id}/status:
+    get:
+      summary: Get job status only
+      operationId: getJobStatus
+      description: Retrieve only the job status without other job details to prevent over-fetching
+      tags:
+        - Jobs
+      security:
+        - OAuth2: [jobs:status:read]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetJobStatusResponse'
+              examples:
+                status_queued:
+                  value:
+                    state:
+                      status: "queued"
+                status_processing:
+                  value:
+                    state:
+                      status: "processing"
+                status_completed:
+                  value:
+                    state:
+                      status: "completed"
+                status_failed:
+                  value:
+                    state:
+                      status: "failed"
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+  /jobs/{job_id}/stream:
+    get:
+      summary: Stream job events
+      operationId: streamJobEvents
+      description: |
+        Stream real-time job status updates using Server-Sent Events (SSE).
+        
+        **Features:**
+        - **Event ID Support**: Each event includes an ID for reconnection support
+        - **Automatic Reconnection**: Client can resume from last event using Last-Event-ID header
+        - **Retry Logic**: Events include retry intervals for automatic reconnection
+        - **Heartbeat**: Regular heartbeat events to keep connection alive
+        - **Event Filtering**: Subscribe to specific event types
+        - **Connection Management**: Configurable timeouts and heartbeat intervals
+      tags:
+        - Jobs
+      security:
+        - OAuth2: [jobs:status:read]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: events
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [status_updated, output_updated, error_updated]
+            default: [status_updated]
+          description: Types of events to stream
+        - in: query
+          name: timeout
+          required: false
+          schema:
+            type: integer
+            minimum: 30
+            maximum: 3600
+            default: 300
+          description: Connection timeout in seconds (30-3600)
+        - in: header
+          name: Last-Event-ID
+          required: false
+          schema:
+            type: string
+          description: Resume from specific event ID after reconnection
+        - in: query
+          name: heartbeat_interval
+          required: false
+          schema:
+            type: integer
+            minimum: 10
+            maximum: 300
+            default: 30
+          description: Heartbeat interval in seconds (10-300)
+        - in: query
+          name: max_events
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+          description: Maximum number of events to stream before closing connection
+      responses:
+        '200':
+          description: Server-Sent Events stream
+          headers:
+            Cache-Control:
+              description: Disable caching for SSE
+              schema:
+                type: string
+                default: "no-cache"
+            Connection:
+              description: Keep connection alive
+              schema:
+                type: string
+                default: "keep-alive"
+            Content-Type:
+              description: SSE content type
+              schema:
+                type: string
+                default: "text/event-stream"
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Server-Sent Events stream
+              examples:
+                status_update:
+                  summary: Job status update event
+                  value: |
+                    id: 12345
+                    event: status_updated
+                    data: {"job_id": "01J8Q2W9KQ2M3R4S5T6U7V8W9X", "status": "processing", "timestamp": "2025-10-07T12:05:00Z"}
+                    retry: 3000
+                    
+                output_update:
+                  summary: Job output update event
+                  value: |
+                    id: 12346
+                    event: output_updated
+                    data: {"job_id": "01J8Q2W9KQ2M3R4S5T6U7V8W9X", "output_id": "output_01", "timestamp": "2025-10-07T12:10:00Z"}
+                    retry: 3000
+                    
+                error_update:
+                  summary: Job error update event
+                  value: |
+                    id: 12347
+                    event: error_updated
+                    data: {"job_id": "01J8Q2W9KQ2M3R4S5T6U7V8W9X", "error": {"code": "PROCESSING_FAILED", "message": "Data processing failed"}, "timestamp": "2025-10-07T12:15:00Z"}
+                    retry: 3000
+                    
+                heartbeat:
+                  summary: Heartbeat event
+                  value: |
+                    id: 12348
+                    event: heartbeat
+                    data: {"timestamp": "2025-10-07T12:20:00Z"}
+                    retry: 3000
+                    
+                connection_close:
+                  summary: Connection close event
+                  value: |
+                    id: 12349
+                    event: connection_close
+                    data: {"reason": "max_events_reached", "total_events": 100, "timestamp": "2025-10-07T12:25:00Z"}
+                    retry: 3000
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
         '500': { $ref: '#/components/responses/InternalServerError' }
         '502': { $ref: '#/components/responses/BadGateway' }
@@ -1873,6 +2068,67 @@ components:
           format: date-time
           nullable: true
           description: ISO timestamp when job confirmed
+    JobBasic:
+      type: object
+      required: [id, type, authorId, tenantId, state, inputs, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          description: Job ID
+        type:
+          type: string
+          description: Job type
+        authorId:
+          type: string
+          description: Author ID i.e. User ID
+        tenantId:
+          type: string
+          description: Tenant ID
+        state:
+          $ref: '#/components/schemas/JobState'
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobInput'
+        created_at:
+          type: string
+          format: date-time
+          description: ISO timestamp when job created
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO timestamp when job updated
+        queued_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO timestamp when job queued
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO timestamp when job started
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO timestamp when job completed
+        failed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO timestamp when job failed
+        processed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO timestamp when job processed
+        confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO timestamp when job confirmed
     JobInput:
       type: object
       required: [id, type]
@@ -2074,7 +2330,13 @@ components:
       required: [job]
       properties:
         job:
-          $ref: '#/components/schemas/Job'
+          $ref: '#/components/schemas/JobBasic'
+    GetJobStatusResponse:
+      type: object
+      required: [state]
+      properties:
+        state:
+          $ref: '#/components/schemas/JobState'
     GetJobOutputsResponse:
       type: object
       required: [outputs]
@@ -2583,3 +2845,78 @@ components:
       properties:
         user:
           $ref: '#/components/schemas/User'
+    SSEEvent:
+      type: object
+      required: [id, event, data]
+      properties:
+        id:
+          type: string
+          description: Event ID for reconnection support
+        event:
+          type: string
+          enum: [status_updated, output_updated, error_updated, heartbeat, connection_close]
+          description: Event type
+        data:
+          type: object
+          description: Event payload data
+        retry:
+          type: integer
+          description: Retry interval in milliseconds for automatic reconnection
+    SSEStatusEvent:
+      type: object
+      required: [job_id, status, timestamp]
+      properties:
+        job_id:
+          type: string
+          description: Job ID
+        status:
+          type: string
+          enum: [queued, processing, processed, confirming, completed, failed, unknown]
+          description: Job status
+        timestamp:
+          type: string
+          format: date-time
+          description: Event timestamp
+    SSEOutputEvent:
+      type: object
+      required: [job_id, output_id, timestamp]
+      properties:
+        job_id:
+          type: string
+          description: Job ID
+        output_id:
+          type: string
+          description: Output ID
+        timestamp:
+          type: string
+          format: date-time
+          description: Event timestamp
+    SSEErrorEvent:
+      type: object
+      required: [job_id, error, timestamp]
+      properties:
+        job_id:
+          type: string
+          description: Job ID
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Error code
+            message:
+              type: string
+              description: Error message
+        timestamp:
+          type: string
+          format: date-time
+          description: Event timestamp
+    SSEHeartbeatEvent:
+      type: object
+      required: [timestamp]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Heartbeat timestamp
