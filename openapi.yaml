@@ -1,0 +1,2585 @@
+openapi: 3.0.3
+info:
+  title: Jobs API
+  version: 1.0.1
+  description: |
+    Submit long-running jobs and poll for status. Final confirmations are recorded on an EVM-compatible chain.
+    Uses path versioning (/v1) and RFC7807 problem+json errors.
+    
+    **Authentication:**
+    - **Production**: Auth0 OIDC/OAuth2.0 PKCE flow with mandatory MFA (Passkeys,TOTP)
+    - **Sandbox**: OAuth2 with MFA or ApiKey (for testing and development)
+    
+    **Security Features:**
+    - **Network Security**: Cloudflare WAF with OWASP protection, advanced bot detection, and real-time threat intelligence
+    - **Infrastructure Protection**: Kong Gateway for API management and multi-layer rate limiting
+    - **Traffic Management**: Per-IP fallback protection (10 QPS) for unauthenticated requests
+    - **Rate Limiting**: Per-tenant token bucket rate limiting (100 RPS sustained, 200 burst)
+    - **Burst Protection**: Spike arrest protection (20 requests per 100ms) against micro-bursts
+    - **Authentication**: Mandatory Multi-Factor Authentication (MFA) for all accounts
+    - **Token Security**: Short-lived JWT tokens (5 minutes TTL)
+    - **Authorization**: Scope-based authorization with least-privilege access
+    - **Quota Management**: Per-tenant quota enforcement with soft/hard caps
+servers:
+  - url: https://api.example.com/v1
+    description: Production (OAuth2 only)
+  - url: https://sandbox.api.example.com/v1
+    description: Sandbox (OAuth2 or ApiKey)
+tags:
+  - name: System
+    description: System health and readiness checks
+  - name: Jobs
+    description: Job management and processing
+  - name: Webhooks
+    description: Webhook registration and management
+  - name: Billing
+    description: Usage tracking and billing management
+  - name: Analytics
+    description: Business metrics and reporting
+  - name: Users
+    description: User management and tenant administration
+paths:
+  /system/health:
+    get:
+      summary: System health check
+      operationId: getSystemHealth
+      description: Check overall system health and status
+      tags:
+        - System
+      responses:
+        '200':
+          description: System health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemHealth'
+              examples:
+                healthy:
+                  value:
+                    status: "healthy"
+                    timestamp: "2025-10-07T12:00:00Z"
+                    version: "1.0.1"
+                    services:
+                      api: "healthy"
+                      database: "healthy"
+                      cache: "healthy"
+                      queue: "healthy"
+                      blockchain: "healthy"
+                      kong_gateway: "healthy"
+                      cloudflare_waf: "healthy"
+                    metrics:
+                      response_time_ms: 45
+                      cpu_usage_percent: 25.5
+                      memory_usage_percent: 68.2
+                      disk_io_utilization_percent: 12.8
+                      network_io_utilization_percent: 15.3
+                      requests_per_second: 12.5
+                      peak_requests_per_second_5m: 18.2
+                      average_requests_per_second_1h: 14.8
+                      peak_requests_per_second_24h: 25.6
+                      error_rate_5m: 0.002
+                      error_rate_1h: 0.001
+                      error_rate_24h: 0.0008
+                      error_burn_rate_5m: 0.2
+                      error_burn_rate_1h: 0.1
+                      error_burn_rate_24h: 0.08
+        '503':
+          description: System unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemHealth'
+              examples:
+                unhealthy:
+                  value:
+                    status: "unhealthy"
+                    timestamp: "2025-10-07T12:00:00Z"
+                    version: "1.0.1"
+                    services:
+                      api: "healthy"
+                      database: "degraded"
+                      cache: "unhealthy"
+                      queue: "unhealthy"
+                      blockchain: "healthy"
+                      kong_gateway: "healthy"
+                      cloudflare_waf: "degraded"
+                    metrics:
+                      response_time_ms: 850
+                      cpu_usage_percent: 89.3
+                      memory_usage_percent: 94.7
+                      disk_io_utilization_percent: 78.2
+                      network_io_utilization_percent: 45.6
+                      requests_per_second: 2.1
+                      peak_requests_per_second_5m: 3.8
+                      average_requests_per_second_1h: 8.4
+                      peak_requests_per_second_24h: 15.2
+                      error_rate_5m: 0.158
+                      error_rate_1h: 0.142
+                      error_rate_24h: 0.089
+                      error_burn_rate_5m: 15.8
+                      error_burn_rate_1h: 14.2
+                      error_burn_rate_24h: 8.9
+  /system/ready:
+    get:
+      summary: System readiness check
+      operationId: getSystemReady
+      description: Check if system is ready to accept requests
+      tags:
+        - System
+      responses:
+        '200':
+          description: System is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemReady'
+              examples:
+                ready:
+                  value:
+                    status: "ready"
+                    timestamp: "2025-10-07T12:00:00Z"
+                    checks:
+                      api: "ready"
+                      database: "ready"
+                      cache: "ready"
+                      queue: "ready"
+                      blockchain: "ready"
+                      kong_gateway: "ready"
+                      cloudflare_waf: "ready"
+        '503':
+          description: System not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemReady'
+              examples:
+                not_ready:
+                  value:
+                    status: "not_ready"
+                    timestamp: "2025-10-07T12:00:00Z"
+                    checks:
+                      api: "ready"
+                      database: "ready"
+                      cache: "ready"
+                      queue: "not_ready"
+                      blockchain: "ready"
+                      kong_gateway: "ready"
+                      cloudflare_waf: "not_ready"
+  /jobs:
+    get:
+      summary: List jobs
+      operationId: listJobs
+      description: Retrieve a list of jobs with optional filtering and pagination
+      tags:
+        - Jobs
+      security:
+        - OAuth2: [jobs:status:read]
+        - ApiKey: []
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [queued, processing, processed, confirming, completed, failed, unknown]
+          description: Filter jobs by status
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+          description: Filter jobs by type
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Maximum number of jobs to return
+        - in: query
+          name: offset
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of jobs to skip
+        - in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+            enum: [created_at, updated_at, queued_at, processed_at, completed_at]
+            default: created_at
+          description: Sort jobs by field
+        - in: query
+          name: order
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort order
+      responses:
+        '200':
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetJobsResponse'
+              examples:
+                jobs_list:
+                  value:
+                    jobs:
+                      - id: "01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                        type: "data_processing"
+                        authorId: "user_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                        tenantId: "tenant_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                        state:
+                          status: "completed"
+                        inputs:
+                          - id: "input_01"
+                            type: "email"
+                            email: "user+1@example.com"
+                        created_at: "2025-10-07T12:00:00Z"
+                        updated_at: "2025-10-07T12:05:00Z"
+                        queued_at: "2025-10-07T12:00:00Z"
+                        processed_at: "2025-10-07T12:03:00Z"
+                        completed_at: "2025-10-07T12:05:00Z"
+                        confirmed_at: null
+                      - id: "01J8Q2W9KQ2M3R4S5T6U7V8W9Y"
+                        type: "data_processing"
+                        authorId: "user_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                        tenantId: "tenant_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                        state:
+                          status: "processing"
+                        inputs:
+                          - id: "input_02"
+                            type: "file"
+                            file: "https://example.com/data.csv"
+                        created_at: "2025-10-07T12:10:00Z"
+                        updated_at: "2025-10-07T12:10:00Z"
+                        queued_at: "2025-10-07T12:10:00Z"
+                        processed_at: null
+                        completed_at: null
+                        confirmed_at: null
+                    pagination:
+                      total: 100
+                      limit: 10
+                      offset: 0
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+    post:
+      summary: Submit a new job
+      operationId: createJob
+      tags:
+        - Jobs
+      security:
+        - OAuth2: [jobs:submit]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          description: Client-supplied idempotency key (max 128 chars)
+          schema:
+            type: string
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CreateJobRequest'
+                - $ref: '#/components/schemas/CreateJobsRequest'
+            examples:
+              single_job:
+                summary: Single job creation
+                value:
+                  job:
+                    type: "data_processing"
+                    inputs:
+                      - id: "input_01"
+                        type: "email"
+                        email: "user+1@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                      - id: "input_02"
+                        type: "email"
+                        email: "user+2@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+              bulk_jobs:
+                summary: Bulk job creation
+                value:
+                  jobs:
+                    - type: "data_processing"
+                      inputs:
+                        - id: "input_01"
+                          type: "email"
+                          email: "user+1@example.com"
+                          subject: "Processing Request"
+                          body: "Please process this data"
+                    - type: "data_processing"
+                      inputs:
+                        - id: "input_02"
+                          type: "email"
+                          email: "user+2@example.com"
+                          subject: "Processing Request"
+                          body: "Please process this data"
+      responses:
+        '202':
+          description: Created job response
+          headers:
+            Idempotency-Key:
+              schema:
+                type: string
+              description: Idempotency key used for the request
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+              description: Maximum requests allowed in current window
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+              description: Remaining requests in current window
+            X-RateLimit-Reset:
+              schema:
+                type: string
+                format: date-time
+              description: UTC timestamp when rate limit resets
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/CreateJobResponse'
+                  - $ref: '#/components/schemas/CreateJobsResponse'
+              examples:
+                response_example_01_queued:
+                  value:
+                    id: "01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    type: "data_processing"
+                    authorId: "user_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    tenantId: "tenant_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    state:
+                      status: "queued"
+                    inputs:
+                      - id: "input_01"
+                        type: "email"
+                        email: "user+1@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                      - id: "input_02"
+                        type: "email"
+                        email: "user+2@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                    created_at: "2025-10-07T12:00:00Z"
+                    updated_at: null
+                    queued_at: "2025-10-07T12:00:00Z"
+                    failed_at: null
+                    processed_at: null
+                    confirmed_at: null
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+  /jobs/{job_id}:
+    get:
+      summary: Get job status
+      operationId: getJob
+      tags:
+        - Jobs
+      security:
+        - OAuth2: [jobs:status:read]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Get job response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetJobResponse'
+              examples:
+                response_example_01_queued:
+                  value:
+                    id: "01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    type: "data_processing"
+                    authorId: "user_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    tenantId: "tenant_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    state:
+                      status: "queued"
+                    inputs:
+                      - id: "input_01"
+                        type: "email"
+                        email: "user+1@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                      - id: "input_02"
+                        type: "email"
+                        email: "user+2@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                    created_at: "2025-10-07T12:00:00Z"
+                    updated_at: null
+                    queued_at: "2025-10-07T12:00:00Z"
+                    failed_at: null
+                    processed_at: null
+                    confirmed_at: null
+                response_example_02_processing:
+                  value:
+                    id: "01J8Q2W9KQ2M3R4S5T6U7V8W9Y"
+                    type: "data_processing"
+                    authorId: "user_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    tenantId: "tenant_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    state:
+                      status: "processing"
+                    inputs:
+                      - id: "input_01"
+                        type: "email"
+                        email: "user+1@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                      - id: "input_02"
+                        type: "email"
+                        email: "user+2@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                    created_at: "2025-10-07T12:00:00Z"
+                    updated_at: "2025-10-07T12:05:00Z"
+                    queued_at: "2025-10-07T12:00:00Z"
+                    failed_at: null
+                    processed_at: null
+                    confirmed_at: null
+                response_example_03_processed:
+                  value:
+                    id: "01J8Q2W9KQ2M3R4S5T6U7V8W9Y"
+                    type: "data_processing"
+                    authorId: "user_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    tenantId: "tenant_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    state:
+                      status: "processed"
+                    inputs:
+                      - id: "input_01"
+                        type: "email"
+                        email: "user+1@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                      - id: "input_02"
+                        type: "email"
+                        email: "user+2@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                    created_at: "2025-10-07T12:00:00Z"
+                    updated_at: "2025-10-07T12:10:00Z"
+                    queued_at: "2025-10-07T12:00:00Z"
+                    failed_at: null
+                    processed_at: "2025-10-07T12:10:00Z"
+                    confirmed_at: null
+                response_example_04_confirming:
+                  value:
+                    id: "01J8Q2W9KQ2M3R4S5T6U7V8W9Y"
+                    type: "data_processing"
+                    authorId: "user_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    tenantId: "tenant_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    state:
+                      status: "confirming"
+                    inputs:
+                      - id: "input_01"
+                        type: "email"
+                        email: "user+1@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                      - id: "input_02"
+                        type: "email"
+                        email: "user+2@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                    created_at: "2025-10-07T12:00:00Z"
+                    updated_at: "2025-10-07T12:10:00Z"
+                    queued_at: "2025-10-07T12:00:00Z"
+                    failed_at: null
+                    processed_at: "2025-10-07T12:10:00Z"
+                    confirmed_at: null
+                response_example_05_confirmed:
+                  value:
+                    id: "01J8Q2W9KQ2M3R4S5T6U7V8W9Y"
+                    type: "data_processing"
+                    authorId: "user_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    tenantId: "tenant_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    state:
+                      status: "confirmed"
+                    inputs:
+                      - id: "input_01"
+                        type: "email"
+                        email: "user+1@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                      - id: "input_02"
+                        type: "email"
+                        email: "user+2@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                    created_at: "2025-10-07T12:00:00Z"
+                    updated_at: "2025-10-07T12:20:00Z"
+                    queued_at: "2025-10-07T12:00:00Z"
+                    failed_at: null
+                    processed_at: "2025-10-07T12:10:00Z"
+                    confirmed_at: "2025-10-07T12:20:00Z"
+                response_example_06_failed:
+                  value:
+                    id: "01J8Q2W9KQ2M3R4S5T6U7V8W9Y"
+                    type: "data_processing"
+                    authorId: "user_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    tenantId: "tenant_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    state:
+                      status: "failed"
+                    inputs:
+                      - id: "input_01"
+                        type: "email"
+                        email: "user+1@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                      - id: "input_02"
+                        type: "email"
+                        email: "user+2@example.com"
+                        subject: "Processing Request"
+                        body: "Please process this data"
+                    created_at: "2025-10-07T12:00:00Z"
+                    updated_at: "2025-10-07T12:20:00Z"
+                    queued_at: "2025-10-07T12:00:00Z"
+                    failed_at: "2025-10-07T12:25:00Z"
+                    processed_at: "2025-10-07T12:10:00Z"
+                    confirmed_at: null
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+    delete:
+      summary: Cancel a job
+      operationId: cancelJob
+      tags:
+        - Jobs
+      security:
+        - OAuth2: [jobs:cancel]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: string
+          description: Job ID to cancel
+      responses:
+        '204':
+          description: Job cancelled successfully
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+  /jobs/{job_id}/outputs:
+    get:
+      summary: Get job outputs
+      operationId: getJobOutputs
+      tags:
+        - Jobs
+      security:
+        - OAuth2: [jobs:outputs:read]
+        - ApiKey: []
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Get job outputs response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetJobOutputsResponse'
+              examples:
+                response_example_01_confirmed:
+                  value:
+                    outputs: []
+                response_example_02_processed:
+                  value:
+                    outputs: []
+                response_example_03_failed:
+                  value:
+                    outputs: []
+                response_example_04_confirming:
+                  value:
+                    outputs: []
+                response_example_05_confirmed:
+                  value:
+                    outputs:
+                      - id: "output_01"
+                        data: { "email_sent": true, email_response: { type: "email", email: "user+1@example.com", subject: "Replay: Processing Request", body: "Your request has been received." } }
+                      - id: "output_02"
+                        data: { "email_sent": true, email_response: { type: "email", email: "user+2@example.com", subject: "Replay: Processing Request", body: "Your request has been received." } }
+                response_example_06_failed:
+                  value:
+                    outputs: []
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+  /webhooks:
+    get:
+      summary: Get all webhooks i.e. list all registered webhooks
+      operationId: getWebhooks
+      tags:
+        - Webhooks
+      security:
+        - OAuth2: [webhooks:read]
+        - ApiKey: []
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Maximum number of webhooks to return
+        - in: query
+          name: offset
+          required: false
+          schema:
+            type: integer
+            minimum: 10
+            default: 0
+          description: Number of webhooks to skip
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [active, paused, failed]
+          description: Filter webhooks by status
+        - in: query
+          name: events_subscribed
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [status_updated, output_updated, error_updated]
+          description: Filter webhooks by events subscribed to
+      responses:
+        '200':
+          description: Get webhooks response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetWebhooksResponse'
+              examples:
+                response_example_01_queued:
+                  value:
+                    webhooks:
+                      - id: "webhook_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                        status: "active"
+                        events_subscribed: ["status_updated", "output_updated", "error_updated"]
+                        callbackUrl: "https://client.example.com/webhook"
+                        secret: "[REDACTED]"
+                        created_at: "2025-10-07T12:00:00Z"
+                        updated_at: "2025-10-07T12:00:00Z"
+                        last_delivered_at: "2025-10-07T12:00:00Z"
+                      - id: "webhook_01J8Q2W9KQ2M3R4S5T6U7V8W9Y"
+                        status: "paused"
+                        events_subscribed: ["status_updated"]
+                        callbackUrl: "https://client.example.com/webhook2"
+                        secret: "[REDACTED]"
+                        created_at: "2025-10-07T11:00:00Z"
+                        updated_at: "2025-10-07T11:30:00Z"
+                        last_delivered_at: null
+                    pagination:
+                      total: 2
+                      limit: 10
+                      offset: 0
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+    post:
+      summary: Register a webhook i.e. where to send webhook notifications
+      operationId: registerWebhook
+      tags:
+        - Webhooks
+      security:
+        - OAuth2: [webhooks:create]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookRegistrationRequest'
+              examples:
+                default:
+                  value:
+                  callbackUrl: "https://client.example.com/webhook"
+                  events_subscribed: ["status_updated", "output_updated", "error_updated"]
+                  secret: "webhook_secret"
+      responses:
+        '201':
+          description: Webhook registered response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookRegistrationResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+  /webhooks/{webhook_id}:
+    get:
+      summary: Get webhook details i.e. retrieve webhook information
+      operationId: getWebhook
+      tags:
+        - Webhooks
+      security:
+        - OAuth2: [webhooks:read]
+        - ApiKey: []
+      parameters:
+        - in: path
+          name: webhook_id
+          required: true
+          schema:
+            type: string
+          description: Webhook ID
+      responses:
+        '200':
+          description: Get webhook response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetWebhookResponse'
+              examples:
+                response_example_01_queued:
+                  value:
+                    id: "webhook_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                    status: "active"
+                    events_subscribed: ["status_updated", "output_updated", "error_updated"]
+                    callbackUrl: "https://client.example.com/webhook"
+                    secret: "[REDACTED]"
+                    created_at: "2025-10-07T12:00:00Z"
+                    updated_at: "2025-10-07T12:00:00Z"
+                    last_delivered_at: "2025-10-07T12:00:00Z"
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+    put:
+      summary: Update webhook
+      operationId: updateWebhook
+      tags:
+        - Webhooks
+      security:
+        - OAuth2: [webhooks:update]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      parameters:
+        - in: path
+          name: webhook_id
+          required: true
+          schema:
+            type: string
+          description: Webhook ID to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookUpdateRequest'
+            examples:
+              default:
+                value:
+                  callbackUrl: "https://client.example.com/webhook-updated"
+                  events_subscribed: ["status_updated", "output_updated"]
+                  secret: "new_webhook_secret"
+      responses:
+        '200':
+          description: Webhook updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookUpdateResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+    delete:
+      summary: Delete a webhook
+      operationId: deleteWebhook
+      tags:
+        - Webhooks
+      security:
+        - OAuth2: [webhooks:delete]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      parameters:
+        - in: path
+          name: webhook_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Webhook deleted
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+  /billing/usage:
+    get:
+      summary: Get usage data
+      operationId: getBillingUsage
+      description: Retrieve usage data and quota information for the tenant
+      tags:
+        - Billing
+      security:
+        - OAuth2: [billing:read]
+        - ApiKey: []
+      parameters:
+        - in: query
+          name: start_date
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date for usage data (ISO 8601)
+        - in: query
+          name: end_date
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date for usage data (ISO 8601)
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Maximum number of usage records to return
+        - in: query
+          name: offset
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of usage records to skip
+      responses:
+        '200':
+          description: Usage data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBillingUsageResponse'
+              examples:
+                usage_data:
+                  value:
+                    usage:
+                      - date: "2025-10-01"
+                        jobs_created: 150
+                        jobs_completed: 145
+                        jobs_failed: 5
+                        api_calls: 2500
+                        data_processed_mb: 1024
+                        compute_seconds: 3600
+                        quota_used_percent: 75.5
+                      - date: "2025-10-02"
+                        jobs_created: 200
+                        jobs_completed: 195
+                        jobs_failed: 5
+                        api_calls: 3200
+                        data_processed_mb: 1280
+                        compute_seconds: 4800
+                        quota_used_percent: 85.2
+                    quota:
+                      monthly_jobs: 1000
+                      monthly_api_calls: 10000
+                      monthly_data_mb: 5000
+                      monthly_compute_seconds: 86400
+                      current_usage_percent: 85.2
+                      remaining_jobs: 148
+                      remaining_api_calls: 1480
+                      remaining_data_mb: 740
+                      remaining_compute_seconds: 12960
+                    period:
+                      start_date: "2025-10-01"
+                      end_date: "2025-10-31"
+                      billing_cycle: "monthly"
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+  /billing/invoices:
+    get:
+      summary: Get issued invoices
+      operationId: getBillingInvoices
+      description: Retrieve issued invoices for the tenant
+      tags:
+        - Billing
+      security:
+        - OAuth2: [billing:read]
+        - ApiKey: []
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [draft, pending, paid, overdue, cancelled]
+          description: Filter invoices by status
+        - in: query
+          name: start_date
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date for invoice search (ISO 8601)
+        - in: query
+          name: end_date
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date for invoice search (ISO 8601)
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Maximum number of invoices to return
+        - in: query
+          name: offset
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of invoices to skip
+      responses:
+        '200':
+          description: Invoices retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBillingInvoicesResponse'
+              examples:
+                invoices_list:
+                  value:
+                    invoices:
+                      - id: "inv_01J8Q2W9KQ2M3R4S5T6U7V8W9X"
+                        number: "INV-2025-001"
+                        status: "paid"
+                        amount: 150.00
+                        currency: "USD"
+                        issued_at: "2025-10-01T00:00:00Z"
+                        due_at: "2025-10-31T23:59:59Z"
+                        paid_at: "2025-10-15T14:30:00Z"
+                        period_start: "2025-09-01T00:00:00Z"
+                        period_end: "2025-09-30T23:59:59Z"
+                        line_items:
+                          - description: "Job Processing - 1000 jobs"
+                            quantity: 1000
+                            unit_price: 0.10
+                            total: 100.00
+                          - description: "Compute Time - 3600 seconds"
+                            quantity: 3600
+                            unit_price: 0.001
+                            total: 3.60
+                          - description: "API Calls - 5000 calls"
+                            quantity: 5000
+                            unit_price: 0.01
+                            total: 50.00
+                      - id: "inv_01J8Q2W9KQ2M3R4S5T6U7V8W9Y"
+                        number: "INV-2025-002"
+                        status: "pending"
+                        amount: 200.00
+                        currency: "USD"
+                        issued_at: "2025-11-01T00:00:00Z"
+                        due_at: "2025-11-30T23:59:59Z"
+                        paid_at: null
+                        period_start: "2025-10-01T00:00:00Z"
+                        period_end: "2025-10-31T23:59:59Z"
+                        line_items:
+                          - description: "Job Processing - 1500 jobs"
+                            quantity: 1500
+                            unit_price: 0.10
+                            total: 150.00
+                          - description: "Compute Time - 4800 seconds"
+                            quantity: 4800
+                            unit_price: 0.001
+                            total: 4.80
+                          - description: "API Calls - 8000 calls"
+                            quantity: 8000
+                            unit_price: 0.01
+                            total: 80.00
+                    pagination:
+                      total: 12
+                      limit: 10
+                      offset: 0
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+  /analytics/jobs:
+    get:
+      summary: Get job analytics
+      operationId: getJobAnalytics
+      description: Retrieve job analytics and business metrics
+      tags:
+        - Analytics
+      security:
+        - OAuth2: [analytics:read]
+        - ApiKey: []
+      parameters:
+        - in: query
+          name: start_date
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date for analytics data (ISO 8601)
+        - in: query
+          name: end_date
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date for analytics data (ISO 8601)
+        - in: query
+          name: group_by
+          required: false
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: day
+          description: Group analytics data by time period
+        - in: query
+          name: job_type
+          required: false
+          schema:
+            type: string
+          description: Filter analytics by job type
+      responses:
+        '200':
+          description: Job analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetJobAnalyticsResponse'
+              examples:
+                job_analytics:
+                  value:
+                    summary:
+                      total_jobs: 1250
+                      completed_jobs: 1180
+                      failed_jobs: 70
+                      success_rate: 94.4
+                      average_processing_time_seconds: 45.2
+                      total_data_processed_mb: 5120
+                      total_compute_seconds: 54000
+                    trends:
+                      - date: "2025-10-01"
+                        jobs_created: 150
+                        jobs_completed: 145
+                        jobs_failed: 5
+                        success_rate: 96.7
+                        average_processing_time_seconds: 42.1
+                        data_processed_mb: 640
+                        compute_seconds: 3600
+                      - date: "2025-10-02"
+                        jobs_created: 200
+                        jobs_completed: 195
+                        jobs_failed: 5
+                        success_rate: 97.5
+                        average_processing_time_seconds: 38.5
+                        data_processed_mb: 720
+                        compute_seconds: 4800
+                    job_types:
+                      - type: "data_processing"
+                        total_jobs: 800
+                        completed_jobs: 760
+                        failed_jobs: 40
+                        success_rate: 95.0
+                        average_processing_time_seconds: 52.3
+                        total_compute_seconds: 36000
+                      - type: "email_processing"
+                        total_jobs: 300
+                        completed_jobs: 290
+                        failed_jobs: 10
+                        success_rate: 96.7
+                        average_processing_time_seconds: 28.7
+                        total_compute_seconds: 12000
+                      - type: "file_processing"
+                        total_jobs: 150
+                        completed_jobs: 130
+                        failed_jobs: 20
+                        success_rate: 86.7
+                        average_processing_time_seconds: 67.8
+                        total_compute_seconds: 6000
+                    period:
+                      start_date: "2025-10-01"
+                      end_date: "2025-10-31"
+                      group_by: "day"
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+  /users:
+    get:
+      summary: List users
+      operationId: getUsers
+      description: Retrieve list of users for the tenant
+      tags:
+        - Users
+      security:
+        - OAuth2: [users:read]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Maximum number of users to return
+        - in: query
+          name: offset
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of users to skip
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUsersResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+    post:
+      summary: Invite user
+      operationId: inviteUser
+      description: Invite a new user to the tenant
+      tags:
+        - Users
+      security:
+        - OAuth2: [users:invite]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInviteRequest'
+      responses:
+        '201':
+          description: User invited successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInviteResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+  /users/{user_id}:
+    get:
+      summary: Get user
+      operationId: getUser
+      description: Retrieve a specific user by ID
+      tags:
+        - Users
+      security:
+        - OAuth2: [users:read]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUserResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+    put:
+      summary: Update user
+      operationId: updateUser
+      description: Update a user's information
+      tags:
+        - Users
+      security:
+        - OAuth2: [users:update]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+    delete:
+      summary: Delete user
+      operationId: deleteUser
+      description: Remove a user from the tenant
+      tags:
+        - Users
+      security:
+        - OAuth2: [users:delete]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: User deleted successfully
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.example.com/oauth2/authorize
+          tokenUrl: https://auth.example.com/oauth2/token
+          refreshUrl: https://auth.example.com/oauth2/token
+          scopes:
+            # Job Management
+            jobs:status:read: Read job status
+            jobs:outputs:read: Read job outputs
+            jobs:submit: Submit new jobs
+            jobs:cancel: Cancel a job
+            jobs:confirm: Confirm jobs on blockchain
+            # Job Management (internal use only)
+            jobs:global:reconciliation: Execute jobs reconciliation (internal use only)
+            # User Management
+            users:invite: Invite new tenant users
+            users:read: Read tenant users
+            users:update: Update tenant users (only self)
+            users:delete: Delete tenant users
+            # Webhook Management
+            webhooks:create: Register new webhook
+            webhooks:read: Read webhooks
+            webhooks:update: Update webhook
+            webhooks:delete: Delete webhook
+            # Billing
+            billing:read: Read billing information
+            # Analytics
+            analytics:read: Read tenant analytics and reports
+            # System
+            system:health: Access system health endpoints
+      description: |
+        OAuth2 Authorization Code flow with PKCE (Proof Key for Code Exchange).
+        Mandatory Multi-Factor Authentication (MFA) required for all authentication.
+        All tokens are short-lived (5 minutes TTL) and require MFA verification.
+        Supports TOTP, passkeys, and hardware security keys.
+        Uses Auth0 OIDC/OAuth2.0 PKCE flow for secure authentication.
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  responses:
+    BadRequest:
+      description: Bad request
+      headers: {}
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+          examples:
+            invalid_body:
+              value:
+                type: "https://docs.example.com/errors/invalid_body"
+                title: "Invalid request body"
+                status: 400
+                detail: "Missing required field 'type'"
+                instance: "/v1/jobs"
+                code: "invalid_body"
+            bad_request:
+              value:
+                type: "https://docs.example.com/errors/bad_request"
+                title: "Bad Request"
+                status: 400
+                detail: "Invalid request format or parameters"
+                instance: "/v1/jobs"
+                code: "bad_request"
+    Unauthorized:
+      description: Unauthorized
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+          description: Challenge details
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+          examples:
+            unauthorized:
+              value:
+                type: "https://docs.example.com/errors/unauthorized"
+                title: "Unauthorized"
+                status: 401
+                detail: "Missing or invalid token"
+                instance: "/v1/jobs"
+                code: "unauthorized"
+    Forbidden:
+      description: Forbidden
+      headers: {}
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+          examples:
+            forbidden:
+              value:
+                type: "https://docs.example.com/errors/forbidden"
+                title: "Forbidden"
+                status: 403
+                detail: "Insufficient permissions"
+                instance: "/v1/jobs"
+                code: "forbidden"
+    NotFound:
+      description: Not found
+      headers: {}
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+          examples:
+            not_found:
+              value:
+                type: "https://docs.example.com/errors/not_found"
+                title: "Not Found"
+                status: 404
+                detail: "Resource not found"
+                instance: "/v1/jobs/01J8..."
+                code: "not_found"
+    Conflict:
+      description: Conflict
+      headers: {}
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+          examples:
+            conflict:
+              value:
+                type: "https://docs.example.com/errors/conflict"
+                title: "Conflict"
+                status: 409
+                detail: "Resource conflict"
+                instance: "/v1/jobs/01J8..."
+                code: "conflict"
+    TooManyRequests:
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+            format: int32
+          description: Seconds to wait before retrying
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Request limit per time window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Remaining requests in current window
+        X-RateLimit-Reset:
+          schema:
+            type: string
+            format: date-time
+          description: UTC timestamp when rate limit resets
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+          examples:
+            too_many_requests:
+              value:
+                type: "https://docs.example.com/errors/too_many_requests"
+                title: "Too Many Requests"
+                status: 429
+                detail: "Rate limit exceeded"
+                instance: "/v1/jobs"
+                code: "too_many_requests"
+                retryAfterSeconds: 30
+    ServiceUnavailable:
+      description: Service Unavailable
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+            format: int32
+          description: Seconds to wait before retrying
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+          examples:
+            service_unavailable:
+              value:
+                type: "https://docs.example.com/errors/service_unavailable"
+                title: "Service Unavailable"
+                status: 503
+                detail: "Service temporarily unavailable"
+                instance: "/v1/jobs"
+                code: "service_unavailable"
+                retryAfterSeconds: 30
+    PayloadTooLarge:
+      description: Payload Too Large
+      headers: {}
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+          examples:
+            payload_too_large:
+              value:
+                type: "https://docs.example.com/errors/payload_too_large"
+                title: "Payload Too Large"
+                status: 413
+                detail: "Request size exceeds limit"
+                instance: "/v1/jobs"
+                code: "payload_too_large"
+    UnsupportedMediaType:
+      description: Unsupported Media Type
+      headers: {}
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+          examples:
+            unsupported_media_type:
+              value:
+                type: "https://docs.example.com/errors/unsupported_media_type"
+                title: "Unsupported Media Type"
+                status: 415
+                detail: "Content-Type not supported"
+                instance: "/v1/jobs"
+                code: "unsupported_media_type"
+    UnprocessableEntity:
+      description: Unprocessable Entity
+      headers: {}
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+          examples:
+            unprocessable_entity:
+              value:
+                type: "https://docs.example.com/errors/unprocessable_entity"
+                title: "Unprocessable Entity"
+                status: 422
+                detail: "Valid format but semantic errors"
+                instance: "/v1/jobs"
+                code: "unprocessable_entity"
+    InternalServerError:
+      description: Internal Server Error
+      headers: {}
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+          examples:
+            internal_server_error:
+              value:
+                type: "https://docs.example.com/errors/internal_server_error"
+                title: "Internal Server Error"
+                status: 500
+                detail: "Unexpected server error"
+                instance: "/v1/jobs"
+                code: "internal_server_error"
+    BadGateway:
+      description: Bad Gateway
+      headers: {}
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+          examples:
+            bad_gateway:
+              value:
+                type: "https://docs.example.com/errors/bad_gateway"
+                title: "Bad Gateway"
+                status: 502
+                detail: "Invalid response from upstream service"
+                instance: "/v1/jobs"
+                code: "bad_gateway"
+    GatewayTimeout:
+      description: Gateway Timeout
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+            format: int32
+          description: Seconds to wait before retrying
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+          examples:
+            gateway_timeout:
+              value:
+                type: "https://docs.example.com/errors/gateway_timeout"
+                title: "Gateway Timeout"
+                status: 504
+                detail: "Request timeout, operation took too long"
+                instance: "/v1/jobs"
+                code: "gateway_timeout"
+                retryAfterSeconds: 30
+  schemas:
+    ProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        requestId:
+          type: string
+        retryAfterSeconds:
+          type: integer
+          format: int32
+    ResultStatus:
+      type: boolean
+      description: Result status
+    ResultData:
+      type: object
+      description: Result data
+      nullable: true
+      additionalProperties: true
+    ResultError:
+      type: object
+      oneOf:
+        - type: object
+          description: Error data
+          nullable: true
+          additionalProperties: true
+        - $ref: '#/components/schemas/ProblemDetail'
+    TxReceipt:
+      type: object
+      description: Blockchain transaction receipt data
+      required: [blockHash, blockNumber, transactionHash, transactionIndex, from, to, status, gasUsed, logs]
+      properties:
+        blockHash:
+          type: string
+          description: Block hash (e.g., '0xabc...')
+        blockNumber:
+          type: integer
+          description: Block number (e.g., 5342132)
+        transactionHash:
+          type: string
+          description: Transaction hash (e.g., '0xabc...')
+        transactionIndex:
+          type: integer
+          description: Transaction index (e.g., 0)
+        from:
+          type: string
+          description: From address (e.g., '0xabc...')
+        to:
+          type: string
+          description: To address (e.g., '0xabc...')
+        status:
+          type: string
+          description: Transaction status (e.g., 'pending', 'confirmed', 'failed')
+        gasUsed:
+          type: integer
+          description: Gas used (e.g., 100000)
+        logs:
+          type: array
+          description: Logs
+          items:
+            $ref: '#/components/schemas/TxLog'
+    TxLog:
+      type: object
+      description: Transaction log entry
+      required: [address, topics, data]
+      properties:
+        topic0:
+          type: string
+          description: Topic 0 (e.g., '0xabc...')
+        topic1:
+          type: string
+          description: Topic 1 (e.g., '0xabc...')
+        data:
+          type: string
+          description: Log data (e.g., '0xabc...')
+        address:
+          type: string
+          description: Address (e.g., '0xabc...')
+        topics:
+          type: array
+          description: Topics (e.g., ['0xabc...'])
+          items:
+            type: string
+            description: Topic (e.g., '0xabc...')
+    Result:
+      type: object
+      description: Result object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/ResultStatus'
+        data:
+          $ref: '#/components/schemas/ResultData'
+        error:
+          $ref: '#/components/schemas/ResultError'
+    ResultDataWithTxReceipt:
+      type: object
+      description: Result data
+      nullable: true
+      properties:
+        txReceipt:
+          $ref: '#/components/schemas/TxReceipt'
+    ResultWithTxReceipt:
+      type: object
+      description: Job result data with transaction receipt
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/ResultStatus'
+        data:
+          $ref: '#/components/schemas/ResultDataWithTxReceipt'
+        error:
+          $ref: '#/components/schemas/ResultError'
+    JobState:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [queued, processing, processed, confirming, completed, failed, unknown]
+          description: Current job status
+    Job:
+      type: object
+      required: [id, type, authorId, tenantId, state, inputs, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          description: Job ID
+        type:
+          type: string
+          description: Job type
+        authorId:
+          type: string
+          description: Author ID i.e. User ID
+        tenantId:
+          type: string
+          description: Tenant ID
+        state:
+          $ref: '#/components/schemas/JobState'
+        inputs:
+           type: array
+           items:
+            $ref: '#/components/schemas/JobInput'
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobOutput'
+        created_at:
+          type: string
+          format: date-time
+          description: ISO timestamp when job created
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO timestamp when job queued
+        queued_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO timestamp when job queued
+        failed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO timestamp when job failed
+        processed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO timestamp when job processed
+        confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO timestamp when job confirmed
+    JobInput:
+      type: object
+      required: [id, type]
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+          description: Input ID
+        type:
+          type: string
+          description: Input type
+    JobOutput:
+      type: object
+      description: Job output i.e. job result
+      oneOf:
+        - $ref: '#/components/schemas/Result'
+        - $ref: '#/components/schemas/ResultDataWithTxReceipt'
+    SystemHealth:
+      type: object
+      required: [status, timestamp, version, services, metrics]
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy, degraded]
+          description: Overall system health status
+        timestamp:
+          type: string
+          format: date-time
+          description: Health check timestamp
+        version:
+          type: string
+          description: API version
+        services:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [healthy, unhealthy, degraded]
+          description: Individual service health status
+        metrics:
+          type: object
+          required: [response_time_ms, cpu_usage_percent, memory_usage_percent, disk_io_utilization_percent, network_io_utilization_percent, requests_per_second, peak_requests_per_second_5m, average_requests_per_second_1h, peak_requests_per_second_24h, error_rate_5m, error_rate_1h, error_rate_24h, error_burn_rate_5m, error_burn_rate_1h, error_burn_rate_24h]
+          properties:
+            response_time_ms:
+              type: integer
+              minimum: 0
+              description: API response time in milliseconds
+            cpu_usage_percent:
+              type: number
+              minimum: 0
+              maximum: 100
+              description: CPU utilization percentage
+            memory_usage_percent:
+              type: number
+              minimum: 0
+              maximum: 100
+              description: Memory utilization percentage
+            disk_io_utilization_percent:
+              type: number
+              minimum: 0
+              maximum: 100
+              description: Disk I/O utilization percentage
+            network_io_utilization_percent:
+              type: number
+              minimum: 0
+              maximum: 100
+              description: Network I/O utilization percentage
+            requests_per_second:
+              type: number
+              minimum: 0
+              description: Current requests per second
+            peak_requests_per_second_5m:
+              type: number
+              minimum: 0
+              description: Peak requests per second over last 5 minutes
+            average_requests_per_second_1h:
+              type: number
+              minimum: 0
+              description: Average requests per second over last 1 hour
+            peak_requests_per_second_24h:
+              type: number
+              minimum: 0
+              description: Peak requests per second over last 24 hours
+            error_rate_5m:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Error rate over last 5 minutes (0.0 to 1.0)
+            error_rate_1h:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Error rate over last 1 hour (0.0 to 1.0)
+            error_rate_24h:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Error rate over last 24 hours (0.0 to 1.0)
+            error_burn_rate_5m:
+              type: number
+              minimum: 0
+              description: Error budget burn rate over 5 minutes (dimensionless, 1.0 = consuming budget at expected rate)
+            error_burn_rate_1h:
+              type: number
+              minimum: 0
+              description: Error budget burn rate over 1 hour (dimensionless, 1.0 = consuming budget at expected rate)
+            error_burn_rate_24h:
+              type: number
+              minimum: 0
+              description: Error budget burn rate over 24 hours (dimensionless, 1.0 = consuming budget at expected rate)
+          description: Standard system performance and reliability metrics
+    SystemReady:
+      type: object
+      required: [status, timestamp, checks]
+      properties:
+        status:
+          type: string
+          enum: [ready, not_ready]
+          description: System readiness status
+        timestamp:
+          type: string
+          format: date-time
+          description: Readiness check timestamp
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [ready, not_ready]
+          description: Individual service readiness status
+    CreateJobRequest:
+      type: object
+      required: [job]
+      properties:
+        job:
+          type: object
+          description: Job object i.e. the job to be created
+          required: [type, inputs]
+          properties:
+            type:
+              type: string
+              description: Job type i.e. the type of job to be created
+        inputs:
+              type: array
+              description: Job inputs i.e. the data to be processed by the job
+              items:
+                $ref: '#/components/schemas/JobInput'
+    CreateJobsRequest:
+      type: object
+      required: [jobs]
+      properties:
+        jobs:
+          type: array
+          description: Array of jobs to be created
+          minItems: 1
+          maxItems: 100
+          items:
+            type: object
+            description: Job object i.e. the job to be created
+            required: [type, inputs]
+            properties:
+              type:
+                type: string
+                description: Job type i.e. the type of job to be created
+              inputs:
+                type: array
+                description: Job inputs i.e. the data to be processed by the job
+                items:
+                  $ref: '#/components/schemas/JobInput'
+    CreateJobResponse:
+      type: object
+      required: [job]
+      properties:
+        job:
+          $ref: '#/components/schemas/Job'
+    CreateJobsResponse:
+      type: object
+      required: [jobs, summary]
+      properties:
+        jobs:
+          type: array
+          description: Array of created jobs
+          items:
+            $ref: '#/components/schemas/Job'
+        summary:
+          type: object
+          required: [total, created, failed]
+          properties:
+            total:
+              type: integer
+              description: Total number of jobs in request
+            created:
+              type: integer
+              description: Number of jobs successfully created
+            failed:
+              type: integer
+              description: Number of jobs that failed to create
+          description: Summary of bulk job creation results
+    GetJobResponse:
+      type: object
+      required: [job]
+      properties:
+        job:
+          $ref: '#/components/schemas/Job'
+    GetJobOutputsResponse:
+      type: object
+      required: [outputs]
+      properties:
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobOutput'
+    Webhook:
+      type: object
+      required: [id, status, callbackUrl, events_subscribed, created_at, updated_at, last_delivered_at]
+      properties:
+        id:
+          type: string
+          description: Webhook ID
+        status:
+          type: string
+          enum: [active, paused, failed]
+          description: Webhook status
+        events_subscribed:
+          type: array
+          items:
+            type: string
+            enum: [status_updated, output_updated, error_updated]
+          description: Events subscribed to
+        callbackUrl:
+          type: string
+          format: uri
+          description: Webhook callback URL i.e. where to send webhook notifications
+        secret:
+          type: string
+          description: Webhook secret i.e. secret key for webhook signature verification
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          description: When webhook was created
+        updated_at:
+          type: string
+          format: date-time
+          description: When webhook was last updated
+          nullable: true
+        last_delivered_at:
+          type: string
+          format: date-time
+          description: When webhook was last delivered
+          nullable: true
+    WebhookRegistrationRequest:
+      type: object
+      required: [events_subscribed, callbackUrl, secret]
+      properties:
+        events_subscribed:
+          type: array
+          items:
+            type: string
+            enum: [status_updated, output_updated, error_updated]
+          description: Events subscribed to i.e. what events to send to the callback URL
+        callbackUrl:
+          type: string
+          format: uri
+          description: Webhook callback URL i.e. where to send webhook notifications
+        secret:
+          type: string
+          description: Webhook secret i.e. secret key for webhook signature verification
+    WebhookRegistrationResponse:
+      type: object
+      required: [webhook]
+      properties:
+        webhook:
+          $ref: '#/components/schemas/Webhook'
+    GetWebhookResponse:
+      type: object
+      required: [webhook]
+      properties:
+        webhook:
+          $ref: '#/components/schemas/Webhook'
+    GetWebhooksResponse:
+      type: object
+      required: [webhooks, pagination]
+      properties:
+        webhooks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhook'
+          description: List of webhooks
+        pagination:
+          type: object
+          required: [total, limit, offset]
+          properties:
+            total:
+              type: integer
+              description: Total number of webhooks
+            limit:
+              type: integer
+              description: Maximum number of webhooks returned
+            offset:
+              type: integer
+              description: Number of webhooks skipped
+          description: Pagination information
+    WebhookUpdateRequest:
+      type: object
+      required: [callbackUrl, events_subscribed, secret]
+      properties:
+        callbackUrl:
+          type: string
+          format: uri
+          description: Updated webhook callback URL
+        events_subscribed:
+          type: array
+          items:
+            type: string
+            enum: [status_updated, output_updated, error_updated]
+          description: Updated events to subscribe to
+        secret:
+          type: string
+          description: Updated webhook secret
+    WebhookUpdateResponse:
+      type: object
+      required: [webhook]
+      properties:
+        webhook:
+          $ref: '#/components/schemas/Webhook'
+    GetJobsResponse:
+      type: object
+      required: [jobs, pagination]
+      properties:
+        jobs:
+          type: array
+          description: List of jobs
+          items:
+            $ref: '#/components/schemas/Job'
+        pagination:
+          type: object
+          required: [total, limit, offset]
+          properties:
+            total:
+              type: integer
+              description: Total number of jobs
+            limit:
+              type: integer
+              description: Maximum number of jobs returned
+            offset:
+              type: integer
+              description: Number of jobs skipped
+          description: Pagination information
+    GetBillingUsageResponse:
+      type: object
+      required: [usage, quota, period]
+      properties:
+        usage:
+          type: array
+          description: Daily usage records
+          items:
+            type: object
+            required: [date, jobs_created, jobs_completed, jobs_failed, api_calls, data_processed_mb, compute_seconds, quota_used_percent]
+            properties:
+              date:
+                type: string
+                format: date
+                description: Usage date
+              jobs_created:
+                type: integer
+                description: Number of jobs created
+              jobs_completed:
+                type: integer
+                description: Number of jobs completed
+              jobs_failed:
+                type: integer
+                description: Number of jobs failed
+              api_calls:
+                type: integer
+                description: Number of API calls made
+              data_processed_mb:
+                type: number
+                description: Data processed in MB
+              compute_seconds:
+                type: number
+                description: Total compute time in seconds
+              quota_used_percent:
+                type: number
+                description: Quota usage percentage
+        quota:
+          type: object
+          required: [monthly_jobs, monthly_api_calls, monthly_data_mb, monthly_compute_seconds, current_usage_percent, remaining_jobs, remaining_api_calls, remaining_data_mb, remaining_compute_seconds]
+          properties:
+            monthly_jobs:
+              type: integer
+              description: Monthly job quota
+            monthly_api_calls:
+              type: integer
+              description: Monthly API call quota
+            monthly_data_mb:
+              type: integer
+              description: Monthly data processing quota in MB
+            monthly_compute_seconds:
+              type: integer
+              description: Monthly compute time quota in seconds
+            current_usage_percent:
+              type: number
+              description: Current usage percentage
+            remaining_jobs:
+              type: integer
+              description: Remaining jobs in quota
+            remaining_api_calls:
+              type: integer
+              description: Remaining API calls in quota
+            remaining_data_mb:
+              type: integer
+              description: Remaining data processing quota in MB
+            remaining_compute_seconds:
+              type: integer
+              description: Remaining compute time quota in seconds
+        period:
+          type: object
+          required: [start_date, end_date, billing_cycle]
+          properties:
+            start_date:
+              type: string
+              format: date
+              description: Period start date
+            end_date:
+              type: string
+              format: date
+              description: Period end date
+            billing_cycle:
+              type: string
+              enum: [monthly, quarterly, yearly]
+              description: Billing cycle
+    GetBillingInvoicesResponse:
+      type: object
+      required: [invoices, pagination]
+      properties:
+        invoices:
+          type: array
+          description: List of invoices
+          items:
+            type: object
+            required: [id, number, status, amount, currency, issued_at, due_at, period_start, period_end, line_items]
+            properties:
+              id:
+                type: string
+                description: Invoice ID
+              number:
+                type: string
+                description: Invoice number
+              status:
+                type: string
+                enum: [draft, pending, paid, overdue, cancelled]
+                description: Invoice status
+              amount:
+                type: number
+                description: Invoice amount
+              currency:
+                type: string
+                description: Currency code
+              issued_at:
+                type: string
+                format: date-time
+                description: Invoice issue date
+              due_at:
+                type: string
+                format: date-time
+                description: Invoice due date
+              paid_at:
+                type: string
+                format: date-time
+                nullable: true
+                description: Payment date
+              period_start:
+                type: string
+                format: date-time
+                description: Billing period start
+              period_end:
+                type: string
+                format: date-time
+                description: Billing period end
+              line_items:
+                type: array
+                description: Invoice line items
+                items:
+                  type: object
+                  required: [description, quantity, unit_price, total]
+                  properties:
+                    description:
+                      type: string
+                      description: Line item description
+                    quantity:
+                      type: number
+                      description: Line item quantity
+                    unit_price:
+                      type: number
+                      description: Unit price
+                    total:
+                      type: number
+                      description: Line item total
+        pagination:
+          type: object
+          required: [total, limit, offset]
+          properties:
+            total:
+              type: integer
+              description: Total number of invoices
+            limit:
+              type: integer
+              description: Maximum number of invoices returned
+            offset:
+              type: integer
+              description: Number of invoices skipped
+          description: Pagination information
+    GetJobAnalyticsResponse:
+      type: object
+      required: [summary, trends, job_types, period]
+      properties:
+        summary:
+          type: object
+          required: [total_jobs, completed_jobs, failed_jobs, success_rate, average_processing_time_seconds, total_data_processed_mb, total_compute_seconds]
+          properties:
+            total_jobs:
+              type: integer
+              description: Total number of jobs
+            completed_jobs:
+              type: integer
+              description: Number of completed jobs
+            failed_jobs:
+              type: integer
+              description: Number of failed jobs
+            success_rate:
+              type: number
+              description: Job success rate percentage
+            average_processing_time_seconds:
+              type: number
+              description: Average job processing time in seconds
+            total_data_processed_mb:
+              type: number
+              description: Total data processed in MB
+            total_compute_seconds:
+              type: number
+              description: Total compute time in seconds
+        trends:
+          type: array
+          description: Daily trend data
+          items:
+            type: object
+            required: [date, jobs_created, jobs_completed, jobs_failed, success_rate, average_processing_time_seconds, data_processed_mb, compute_seconds]
+            properties:
+              date:
+                type: string
+                format: date
+                description: Trend date
+              jobs_created:
+                type: integer
+                description: Jobs created on this date
+              jobs_completed:
+                type: integer
+                description: Jobs completed on this date
+              jobs_failed:
+                type: integer
+                description: Jobs failed on this date
+              success_rate:
+                type: number
+                description: Success rate on this date
+              average_processing_time_seconds:
+                type: number
+                description: Average processing time on this date
+              data_processed_mb:
+                type: number
+                description: Data processed on this date
+              compute_seconds:
+                type: number
+                description: Compute time on this date
+        job_types:
+          type: array
+          description: Analytics by job type
+          items:
+            type: object
+            required: [type, total_jobs, completed_jobs, failed_jobs, success_rate, average_processing_time_seconds, total_compute_seconds]
+            properties:
+              type:
+                type: string
+                description: Job type
+              total_jobs:
+                type: integer
+                description: Total jobs of this type
+              completed_jobs:
+                type: integer
+                description: Completed jobs of this type
+              failed_jobs:
+                type: integer
+                description: Failed jobs of this type
+              success_rate:
+                type: number
+                description: Success rate for this job type
+              average_processing_time_seconds:
+                type: number
+                description: Average processing time for this job type
+              total_compute_seconds:
+                type: number
+                description: Total compute time for this job type
+        period:
+          type: object
+          required: [start_date, end_date, group_by]
+          properties:
+            start_date:
+              type: string
+              format: date
+              description: Analytics period start date
+            end_date:
+              type: string
+              format: date
+              description: Analytics period end date
+            group_by:
+              type: string
+              enum: [day, week, month]
+              description: Data grouping period
+    User:
+      type: object
+      required: [id, email, role, status, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          description: User ID
+        email:
+          type: string
+          format: email
+          description: User email address
+        role:
+          type: string
+          enum: [viewer, developer, admin]
+          description: User role within the tenant
+        status:
+          type: string
+          enum: [active, inactive, pending]
+          description: User account status
+        created_at:
+          type: string
+          format: date-time
+          description: User creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: User last update timestamp
+    UserInviteRequest:
+      type: object
+      required: [email, role]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address to invite
+        role:
+          type: string
+          enum: [viewer, developer, admin]
+          description: Role to assign to the user
+    UserInviteResponse:
+      type: object
+      required: [user, invitation_sent]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        invitation_sent:
+          type: boolean
+          description: Whether invitation email was sent
+    UserUpdateRequest:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [viewer, developer, admin]
+          description: New role for the user
+        status:
+          type: string
+          enum: [active, inactive, pending]
+          description: New status for the user
+    UserUpdateResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+    GetUsersResponse:
+      type: object
+      required: [users, pagination]
+      properties:
+        users:
+          type: array
+          description: List of users
+          items:
+            $ref: '#/components/schemas/User'
+        pagination:
+          type: object
+          required: [total, limit, offset]
+          properties:
+            total:
+              type: integer
+              description: Total number of users
+            limit:
+              type: integer
+              description: Maximum number of users returned
+            offset:
+              type: integer
+              description: Number of users skipped
+          description: Pagination information
+    GetUserResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
