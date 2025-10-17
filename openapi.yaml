@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Jobs API
-  version: 1.0.1
+  version: 1.1.1
   description: |
     Submit long-running jobs and poll for status. Final confirmations are recorded on an EVM-compatible chain.
     Uses path versioning (/v1) and RFC7807 problem+json errors.
@@ -13,9 +13,9 @@ info:
     **Security Features:**
     - **Network Security**: Cloudflare WAF with OWASP protection, advanced bot detection, and real-time threat intelligence
     - **Infrastructure Protection**: Kong Gateway for API management and multi-layer rate limiting
-    - **Traffic Management**: Per-IP fallback protection (10 QPS) for unauthenticated requests
-    - **Rate Limiting**: Per-tenant token bucket rate limiting (100 RPS sustained, 200 burst)
-    - **Burst Protection**: Spike arrest protection (20 requests per 100ms) against micro-bursts
+    - **Traffic Management**: Per-IP fallback protection (100 QPS) for unauthenticated requests
+    - **Rate Limiting**: Per-tenant token bucket rate limiting (1000 RPS sustained, 2000 burst)
+    - **Burst Protection**: Spike arrest protection (200 requests per 100ms) against micro-bursts
     - **Authentication**: Mandatory Multi-Factor Authentication (MFA) for all accounts
     - **Token Security**: Short-lived JWT tokens (5 minutes TTL)
     - **Authorization**: Scope-based authorization with least-privilege access
@@ -590,12 +590,12 @@ paths:
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
         '504': { $ref: '#/components/responses/GatewayTimeout' }
     delete:
-      summary: Cancel a job
-      operationId: cancelJob
+      summary: Delete a job
+      operationId: deleteJob
       tags:
         - Jobs
       security:
-        - OAuth2: [jobs:cancel]
+        - OAuth2: [jobs:delete]
         - ApiKey: []
       x-sandbox-only:
         - ApiKey: []
@@ -605,10 +605,10 @@ paths:
           required: true
           schema:
             type: string
-          description: Job ID to cancel
+          description: Job ID to delete
       responses:
         '204':
-          description: Job cancelled successfully
+          description: Job deleted successfully
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
@@ -621,7 +621,7 @@ paths:
         '504': { $ref: '#/components/responses/GatewayTimeout' }
   /jobs/{job_id}/status:
     get:
-      summary: Get job status only
+      summary: Get job status ONLY
       operationId: getJobStatus
       description: Retrieve only the job status without other job details to prevent over-fetching
       tags:
@@ -661,6 +661,75 @@ paths:
                   value:
                     state:
                       status: "failed"
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+    put:
+      summary: Update job status ONLY
+      operationId: updateJobStatus
+      description: Update the status of a specific job (dedicated endpoint, simplifies extension of status types)
+      tags:
+        - Jobs
+      security:
+        - OAuth2: [jobs:status:update]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateJobStatusRequest'
+            examples:
+              update_to_queued:
+                value:
+                  status: "queued"
+                  force: true
+              update_to_processing:
+                value:
+                  status: "processing"
+              update_to_processed:
+                value:
+                  status: "processed"
+              update_to_confirming:
+                value:
+                  status: "confirming"
+              update_to_confirmed:
+                value:
+                  status: "confirmed"
+              update_to_cancelled:
+                value:
+                  status: "cancelled"
+              update_to_rejected:
+                value:
+                  status: "rejected"
+              update_to_failed:
+                value:
+                  status: "failed"
+              update_to_completed:
+                value:
+                  status: "completed"
+
+      responses:
+        '200':
+          description: Job status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateJobStatusResponse'
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
@@ -815,7 +884,7 @@ paths:
         '504': { $ref: '#/components/responses/GatewayTimeout' }
   /jobs/{job_id}/outputs:
     get:
-      summary: Get job outputs
+      summary: Get job outputs ONLY
       operationId: getJobOutputs
       tags:
         - Jobs
@@ -862,6 +931,66 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+  /jobs/reconcile:
+    post:
+      summary: Reconcile jobs
+      operationId: reconcileJobs
+      description: Internal endpoint for job reconciliation (automates retrying DLQ jobs)
+      tags:
+        - Jobs
+      security:
+        - OAuth2: [jobs:global:reconciliation]
+        - ApiKey: []
+      x-sandbox-only:
+        - ApiKey: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReconcileJobsRequest'
+            examples:
+              reconcile_all_failed_jobs:
+                value:
+                  filters:
+                    status: ["failed"]
+                    error_code: ["PROCESSING_FAILED", "CONFIRMATION_FAILED"]
+                  force: false
+              reconcile_all_rejected_jobs:
+                value:
+                  filters:
+                    status: ["rejected"]
+                    error_code: ["PROCESSING_FAILED", "CONFIRMATION_FAILED"]
+                  force: false
+
+              reconcile_all_cancelled_jobs:
+                value:
+                  filters:
+                    status: ["cancelled"]
+                    error_code: ["PROCESSING_FAILED", "CONFIRMATION_FAILED"]
+                  force: false
+
+              reconcile_all_unknown_jobs:
+                value:
+                  filters:
+                    status: ["unknown"]
+                    error_code: ["PROCESSING_FAILED", "CONFIRMATION_FAILED"]
+                  force: false
+      responses:
+        '200':
+          description: Jobs reconciled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconcileJobsResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
         '500': { $ref: '#/components/responses/InternalServerError' }
         '502': { $ref: '#/components/responses/BadGateway' }
@@ -1608,15 +1737,21 @@ components:
           tokenUrl: https://auth.example.com/oauth2/token
           refreshUrl: https://auth.example.com/oauth2/token
           scopes:
-            # Job Management
+            # Job Management (General)
+            jobs:read: Read jobs and confirmations
+            jobs:write: Create and modify jobs
+            # Job Management (Specific)
             jobs:status:read: Read job status
             jobs:outputs:read: Read job outputs
             jobs:submit: Submit new jobs
-            jobs:cancel: Cancel a job
+            jobs:status:update: Update job's status
+            jobs:delete: Delete a job
             jobs:confirm: Confirm jobs on blockchain
             # Job Management (internal use only)
             jobs:global:reconciliation: Execute jobs reconciliation (internal use only)
-            # User Management
+            # User Management (General)
+            users:write: Create and update tenant users
+            # User Management (Specific)
             users:invite: Invite new tenant users
             users:read: Read tenant users
             users:update: Update tenant users (only self)
@@ -2920,3 +3055,75 @@ components:
           type: string
           format: date-time
           description: Heartbeat timestamp
+    UpdateJobStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [queued, processing, processed, confirming, completed, failed, cancelled, rejected]
+          description: New job status
+        force:
+          type: boolean
+          default: false
+    UpdateJobStatusResponse:
+      type: object
+      required: [job_id, status, updated_at]
+      properties:
+        job_id:
+          type: string
+          description: Job ID
+        status:
+          type: string
+          enum: [queued, processing, processed, confirming, completed, failed, cancelled, rejected]
+          description: Updated job status
+        message:
+          type: string
+          description: Status update message
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when status was updated
+    ReconcileJobsRequest:
+      type: object
+      properties:
+        filters:
+          type: object
+          required: [status, type]
+          properties:
+            status:
+              type: string
+              enum: [queued, processing, processed, confirming, completed, failed, cancelled, rejected, unknown]
+              description: Filter jobs by status
+            error_code:
+              type: array
+              description: Filter jobs by error codes
+              items:
+                type: string
+                description: Error code
+        force:
+          type: boolean
+          default: false
+    ReconcileJobsResponse:
+      type: object
+      required: [counts]
+      properties:
+        counts:
+          type: object
+          required: [total, cancelled, rejected, failed, unknown]
+          properties:
+            total:
+              type: integer
+              description: Total number of jobs filtered
+            cancelled:
+              type: integer
+              description: Number of cancelled jobs filtered
+            rejected:
+              type: integer
+              description: Number of rejected jobs filtered
+            failed:
+              type: integer
+              description: Number of failed jobs filtered
+            unknown:
+              type: integer
+              description: Number of unknown jobs filtered

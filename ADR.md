@@ -1,4 +1,4 @@
-# Jobs API — Architecture Decision Record (ADR)
+# Jobs API — Architecture Decision Record (ADR) v1.1.1
 
 <style>
 table {
@@ -341,14 +341,15 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
     - **Build** Own simple service
     - **Buy**: Lago (managed), Alguna, Maxio, 
 
-**Enhanced Decision Criteria**:
+
+<!-- **Enhanced Decision Criteria**:
 - **Performance Requirements**: [Latency, throughput, resource usage requirements]
 - **Scalability Needs**: [Connection limits, horizontal scaling requirements]
 - **Real-time Requirements**: [Event ordering, state management, network resilience needs]
 - **Operational Complexity**: [Maintenance, monitoring, debugging requirements]
 - **Security Requirements**: [Authentication, authorization, compliance needs]
 - **Cost Considerations**: [Infrastructure, development, operational costs]
-- **Team Expertise**: [Existing skills, learning curve, training requirements]
+- **Team Expertise**: [Existing skills, learning curve, training requirements] -->
 
 
 ### API Governance
@@ -364,8 +365,8 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
   - **Jobs**
     - GET /jobs
     - GET /jobs/:id
-    - GET /jobs/:id/status *(dedicated endpoint, prevents over-fetching)*
-    - GET /jobs/:id/outputs *(dedicated endpoint, prevents over-fetching, paginated)*
+    - GET /jobs/:id/status *(dedicated endpoint for "status", prevents over-fetching)*
+    - GET /jobs/:id/outputs *(dedicated endpoint for "outputs", prevents over-fetching, paginated)*
     - GET /jobs/:id/stream *(separate endpoint for Server-Sent Events)*
     - POST /jobs *(single endpoint, handles either one or many jobs)*
     - PUT /jobs/:id/status *(dedicated endpoint, simplifies extension of status types)*
@@ -535,9 +536,6 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
   - **Rationale** It balances client simplicity and deduplication guarantees.
 
 - **Default Cache TTL**: 24 hours
-
-
-
 
 
 ### Platform Policies (Gateway)
@@ -731,61 +729,65 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
     - **Cost vs Features**: Kong Gateway provides advanced features with reasonable cost
     - **Features vs Simplicity**: Kong (advanced features) vs Traefik (simple setup) vs NGINX Plus (high performance)
 
-- **Chosen Approach**: *Multi-layer Rate Limiting with Token Bucket + Leaky Bucket*
-  - **Rationale**: Comprehensive protection against different attack vectors while maintaining performance
-  - **Layer 1 (Per-IP)**: 10 QPS fallback for unauthenticated requests (infrastructure protection)
-  - **Layer 2 (Token Bucket)**: 100 RPS sustained, 200 burst per tenant (fair usage enforcement)
-  - **Layer 3 (Leaky Bucket)**: 20 requests per 100ms per tenant (micro-burst protection)
-  - **Implementation**: Kong Gateway for rate limiting with <3ms latency overhead
-  - **Cost**: Depends on plan selection
+- **Chosen Approach**: *Kong* + *Multi-layer Rate Limiting with Token Bucket + Leaky Bucket*
+  - **Rationale**: 
+    - Comprehensive protection against different attack vectors while maintaining performance
+    - **Kong Gateway Selection Rationale**: Kong provides <3ms latency and 137K+ RPS performance that's 20x faster than cloud providers, offers native support for our Token Bucket + Leaky Bucket algorithms, has a clear cost progression from free to enterprise ($250-2000), supports flexible deployment strategies, and outperforms alternatives like NGINX Plus and Traefik for API management use cases.
+
+  - **Kong Cost**: Depends on plan selection
     - **Free Plan**: $0/month (Basic rate limiting, community support) - for development/testing
     - **Pro Plan**: $250/month (Advanced rate limiting, support, monitoring) - for SMB production
     - **Enterprise Plan**: $500-2000/month (Full enterprise features, SLA, compliance) - for enterprise
   - **Upgrade Path**: Kong Free → Kong Pro → Enterprise solutions (AWS, Azure, GCP) for advanced features
 
-- **Rate limit tiers**: 
-  - **Per-IP Tier**: 10 QPS for unauthenticated requests (prevents infrastructure abuse)
-  - **Per-Tenant Tier**: 100 RPS sustained, 200 burst capacity (ensures fair resource allocation)
-  - **Per-Endpoint Tier**: Same as per-tenant (consistent limits across all endpoints)
-  - **Global Tier**: No global limits (tenant isolation prevents cross-tenant impact)
+  - **Multi-Layer Traffic Control**
+    - **Layer 1 (Per-IP)**: 100 QPS fallback for unauthenticated requests (infrastructure protection)
+    - **Layer 2 (Token Bucket)**: 1000 RPS sustained, 2000 burst per tenant (fair usage enforcement)
+    - **Layer 3 (Leaky Bucket)**: 200 requests per 100ms per tenant (micro-burst protection)
 
-- **Quota enforcement**: 
-  - **Monthly Job Quotas**: Per-tenant, per calendar month (Julian calendar) based on pricing plan
-  - **Soft Cap (80%)**: 202 Accepted with warning headers, notifications via email/in-app/dashboard
-  - **Hard Cap (100%)**: 429 Too Many Requests, complete job creation blocking, read ops still allowed
-  - **Quota Reset**: First day of each month at 00:00:00 UTC, simultaneous reset for all tenants
-  - **Plan Changes**: 
-    - **Upgrades**: New quota applied immediately (new total - already used)
-    - **Downgrades**: Keep current quota until month end, new quota from next month
-  - **Idempotency Handling**: Duplicate requests with idempotency keys don't count against quotas
-  - **Storage**: 
-    - **Primary**: Database (ACID compliance, durability, rich analytics)
-    - **Cache Layer**: Redis (replication of quota counters, <2ms latency for quota checks)
-    - **Architecture**: Database as source of truth, Redis as high-performance cache for quota enforcement
-    - **Sync Strategy**: Database writes trigger Redis cache updates, cache miss falls back to database
-  - **Increment**: Only on 2XX responses, idempotent replays don't double-charge
+  - **Rate limit tiers**: 
+    - **Per-IP Tier**: 100 QPS for unauthenticated requests (prevents infrastructure abuse)
+    - **Per-Tenant Tier**: 1000 RPS sustained, 2000 burst capacity (ensures fair resource allocation)
+    - **Per-Endpoint Tier**: Same as per-tenant (consistent limits across all endpoints)
+    - **Global Tier**: No global limits (tenant isolation prevents cross-tenant impact)
 
 - **Throttling behavior**: 
   - **429 Too Many Requests**: Standard rate limit exceeded response
   - **Retry-After Headers**: Time until rate limit resets (1-60 seconds)
   - **Rate Limit Headers**: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
-  - **Error Format**: RFC7807 with specific error codes (ip_rate_limit_exceeded, rate_limit_exceeded)
-  - **Client Guidance**: Clear error messages with retry timing information
 
-- **Quota monitoring**: 
-  - **Performance Metrics**: <5ms latency overhead per layer, <3ms for Kong Gateway
-  - **Effectiveness Metrics**: Layer 1 blocks 60-80% of abuse, Layer 2 handles 15-30%, Layer 3 catches 5-15%
-  - **Quota Utilization**: Real-time quota usage across all tenants, usage patterns by tenant segment
-  - **Capacity Planning**: Usage growth trends and capacity projections, daily/weekly/monthly usage trends
-  - **Alert Thresholds**: >1% total requests blocked, >5ms latency degradation, >60% rate limiter capacity
-  - **Quota Alerts**: 
-    - **Soft Cap**: 80% quota usage triggers email/in-app/dashboard notifications
-    - **Hard Cap**: 100% quota exceeded triggers immediate blocking and notifications
-    - **System Health**: Quota system failures, latency/throughput violations
-    - **Usage Patterns**: Unusual usage patterns and potential abuse detection
-  - **Tenant Monitoring**: Single tenant >5% of blocks indicates abuse, 3x more blocks than others indicates unfair limits
-  - **Security Alerts**: >50 requests/minute from single IP, >30% blocks from single country
-  - **Error Responses**: RFC7807 compliant with specific codes (quota_exceeded, quota_system_unavailable)
+- **Quotas**
+
+  - **Quota**: *Enforcement*: 
+
+    - **Monthly Job Quotas**: Per-tenant, per calendar month (Julian calendar) based on pricing plan
+    - **Soft Cap (80%)**: 202 Accepted with warning headers, notifications via email/in-app/dashboard
+    - **Hard Cap (100%)**: 429 Too Many Requests, complete job creation blocking, read ops still allowed
+    - **Quota Reset**: First day of each month at 00:00:00 UTC, simultaneous reset for all tenants
+
+    - **Plan Changes**: 
+      - **Upgrades**: New quota applied immediately (new total - already used)
+      - **Downgrades**: Keep current quota until month end, new quota from next month
+
+    - **Idempotency Handling**: Duplicate requests with idempotency keys don't count against quotas
+
+    - **Storage**: 
+      - **Primary**: MongoDB (transactions, durability, rich analytics)
+      - **Cache Layer**: Redis (replication of quota counters, <2ms latency for quota checks)
+
+  - **Quota**: *Monitoring*: 
+  
+    - **Performance Metrics**: <5ms latency overhead per layer, <3ms for Kong Gateway
+    - **Effectiveness Metrics**: Layer 1 blocks 60-80% of abuse, Layer 2 handles 15-30%, Layer 3 catches 5-15%
+    - **Capacity Planning**: Usage growth trends and capacity projections, daily/weekly/monthly usage trends
+    - **Alert Thresholds**: >1% total requests blocked, >5ms latency degradation, >60% rate limiter capacity
+    - **Quota Alerts**: 
+      - **Soft Cap**: 80% quota usage triggers email/in-app/dashboard notifications
+      - **Hard Cap**: 100% quota exceeded triggers immediate blocking and notifications
+      - **System Health**: Quota system failures, latency/throughput violations
+      - **Usage Patterns**: Unusual usage patterns and potential abuse detection
+    - **Tenant Monitoring**: Single tenant >5% of blocks indicates abuse, 3x more blocks than others indicates unfair limits
+    - **Security Alerts**: >50 requests/minute from single IP, >30% blocks from single country
 
 #### Abuse Protection
 
@@ -832,25 +834,25 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
   - **Security**: OWASP protection, advanced bot detection, DDoS mitigation included
   - **Upgrade Path**: Cloudflare → AWS WAF (if on AWS) → Enterprise WAF (if compliance required)
 
-- **WAF rules**: **OWASP Protection with Custom Rules**
+- **WAF rules**: *OWASP Protection with Custom Rules*
   - **Standard Protection**: SQL injection, XSS, CSRF, command injection, directory traversal
   - **Custom Rules**: Tenant-specific rate limiting, API endpoint protection
   - **Rule Management**: Automated rule updates, false positive tuning, performance optimization
   - **Monitoring**: Real-time attack detection, rule effectiveness metrics, false positive tracking
 
-- **DDoS protection**: **Multi-layer DDoS Mitigation**
+- **DDoS protection**: *Multi-layer DDoS Mitigation*
   - **Volumetric Attacks**: Rate limiting at edge, traffic shaping, bandwidth throttling
   - **Application-layer**: Request pattern analysis, connection limiting, resource exhaustion prevention
   - **Infrastructure**: Global edge network, automatic scaling, traffic distribution
   - **Response**: Automatic blocking, traffic redirection, service degradation protection
 
-- **Bot detection**: **Advanced Behavioral Analysis**
+- **Bot detection**: *Advanced Behavioral Analysis*
   - **Credential Stuffing**: Login attempt pattern detection, account lockout mechanisms
   - **Scraping Protection**: Request frequency analysis, user agent validation, behavioral fingerprinting
   - **CAPTCHA Integration**: Challenge-response for suspicious activity, progressive difficulty
   - **ML Detection**: Machine learning models for bot behavior identification, continuous learning
 
-- **Threat intelligence**: **Real-time Security Feeds**
+- **Threat intelligence**: *Real-time Security Feeds*
   - **IP Reputation**: Malicious IP blocking, geographic restrictions, known attacker databases
   - **Attack Patterns**: Signature-based detection, anomaly detection, zero-day protection
   - **Update Frequency**: Real-time threat feed updates, automatic rule deployment
@@ -879,28 +881,28 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
   - **Performance**: <100ms validation timeout, pre-compiled schemas, lazy loading for large schemas
   - **Security**: Schema injection prevention, malicious pattern blocking, recursive validation protection
 
-- **Input validation**: **JSON Schema Validation with Sanitization**
+- **Input validation**: *JSON Schema Validation with Sanitization*
   - **Schema Validation**: Enforced at edge for all POST bodies, specific error details, 100ms timeout
   - **Sanitization**: Automatic stripping of unknown headers, query params, and body params
   - **Error Handling**: 400 Bad Request with specific validation errors, 415 Unsupported Media Type
   - **Performance**: Pre-compiled schemas, memory caching, hot reload for updates
   - **Security**: Schema integrity validation, injection attack prevention, recursive loop protection
 
-- **Size limits**: **Comprehensive Request Limits**
+- **Size limits**: *Comprehensive Request Limits*
   - **Request Body**: Maximum 1 MiB per request (prevents DoS, ensures reasonable payload size)
   - **Headers**: Maximum 8 KiB total headers, 4 KiB per individual header (prevents header flooding)
   - **Schema Size**: Maximum 1 MiB per schema (prevents memory exhaustion)
   - **Error Response**: 413 Payload Too Large with size limit information
   - **Business Justification**: Prevents resource exhaustion, ensures fair usage, protects infrastructure
 
-- **Content filtering**: **Strict Content-Type Enforcement**
+- **Content filtering**: *Strict Content-Type Enforcement*
   - **POST Requests**: `application/json` required, strict Content-Type checking
   - **Validation**: Immediate rejection of incorrect Content-Type headers
   - **Error Response**: 415 Unsupported Media Type with supported Content-Type information
   - **Security**: Prevents type confusion attacks, ensures proper content handling
   - **Performance**: Fast Content-Type checking with minimal overhead
 
-- **Data protection**: **Multi-layer Data Security**
+- **Data protection**: *Multi-layer Data Security*
   - **Encryption**: TLS 1.3 for transit, AES-256 for sensitive data at rest
   - **PII Handling**: Automatic detection and masking of personally identifiable information
   - **Compliance**: GDPR, CCPA, SOC2 compliance for data protection requirements
@@ -912,16 +914,10 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
 #### Usage Events
 
 - **Options Considered**: 
-  - **API Call Events**: Track individual API calls and API handler results
-    - granular billing
-    - high volume
-  - **Comprehensive Events**: All job lifecycle events (detailed billing, rich analytics)
-  - **Custom Events**: Business-specific events (`job creation` -> `job completion` -> `job confirmation`)
-    - tailored billing
-    - complex implementation
-  - **Custom Events**: Business-specific events
-    - tailored billing
-    - complex implementation
+  - **API Volume Utilization**: Job processing volume, GB
+  - **API Compute Utilization**: Job processing compute, MS
+  - **API Call Events**: Track individual API calls
+  - **Business Events**: All job lifecycle events
 
 - **Trade-offs**: 
   - **Granularity vs Volume**: API call events provide granular billing but generate high event volume
@@ -929,49 +925,17 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
   - **Implementation vs Value**: Custom events require more work but provide business-specific value
   - **Event Types vs Business Logic**: API call events (technical) vs job lifecycle events (business-focused)
 
-- **Chosen Approach**: *Comprehensive Job Lifecycle Events*
-  - **Rationale**: Complete job lifecycle tracking enables accurate billing and rich business insights
-  - **Business Value**: Enables usage-based pricing, capacity planning, and customer analytics
-  - **Billing Accuracy**: Track actual resource consumption throughout job lifecycle
-  - **Compliance**: Meet audit requirements with complete event trail
+- **Chosen Approach**: *Hybrid*
+  - **Rationale**: Since we're in the discovery phase, experimenting with different approaches will help us understand what works best and learn from our customers.
 
-- **Event types**: *Job Lifecycle Events with Business Justification*
-  - **Job Creation Event**: 
-    - **Purpose**: track job submission and resource allocation
-    - **Business Value**: Billing for job initiation, usage analytics
-    - **Metrics**: priority, resource requirements, submission source, submission timestamp
-  - **Job Completion Event**:
-    - **Purpose**: track successful job execution and resource consumption
-    - **Business Value**: Billing for actual compute time, job completion success rate analytics
-    - **Metrics**: execution time, resource consumption, output size, completion timestamp
-  - **Job Confirmation Event**:
-    - **Purpose**: track user acknowledgment and job finalization
-    - **Business Value**: billing for job confirmation, job confirmation success rate analytics
-    - **Metrics**: chain id, block number, confirmation number, confirmation timestamp
+  - **Event Types**:
+    - *Created Job Count*
+    - *Processed Job Count*
+    - *Confirmed Job Count*
+    - *Job Status Updates Consumed* (manual fetches, Server-Send Events)
+    - *Job Compute Time*
+    - *Job Data Volume*
 
-- **Event schema**: *Structured Event Schema with Validation*
-  - **Common Fields**: event ID, event type, tenant ID, user ID, correlation ID, job ID, job type
-  - **Job Creation Schema**: priority, resource requirements, submission source, submission timestamp
-  - **Job Completion Schema**: execution time, resource consumption, output size, completion timestamp
-  - **Job Confirmation Schema**: confirmation method, user feedback, delivery status
-  - **Validation Rules**: chain id, block number, confirmation number, confirmation timestamp
-
-- **Event correlation**: *Job Lifecycle Traceability*
-  - **Correlation ID**: Unique identifier linking all events for a single job
-  - **Job ID**: Primary identifier for job lifecycle tracking
-  - **Tenant ID**: Multi-tenant isolation and billing
-  - **User ID**: User-specific analytics and billing
-  - **Traceability**: Complete audit trail from creation to confirmation
-  - **Analytics**: Job lifecycle analysis, performance metrics, user behavior
-
-- **Event durability**: *Reliable Event Processing*
-  - **At-least-once Delivery**: Guarantee events are not lost during processing
-  - **Idempotency**: Handle duplicate events gracefully with idempotent processing
-  - **Retry Logic**: Automatic retry for failed event processing with exponential backoff
-  - **Dead Letter Queue**: Handle permanently failed events for manual review
-  - **Event Ordering**: Maintain event sequence for accurate lifecycle tracking
-  - **Retention Period**: 14 days default retention (AWS SQS allows 1-365 days, 14 days balances cost vs compliance)
-  - **Backup Strategy**: Event replication across multiple data centers for disaster recovery
 
 #### Billing System
 
@@ -1046,11 +1010,11 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
       - **Weaknesses**: Limited usage-based billing, basic subscription management
       - **Best For**: Payment processing + basic subscriptions, global businesses
       - **Cost**: 0.5% + $0.30 per transaction, $0.50 per subscription
-    - **Chargebee**: 
-      - **Strengths**: Comprehensive subscription management, tax handling, dunning management
-      - **Weaknesses**: Complex for simple use cases, expensive for small businesses
-      - **Best For**: Complex subscription businesses, enterprise customers
-      - **Cost**: $249-2,499/month (tiered pricing)
+    - **Braintree**: 
+      - **Strengths**: PayPal integration, global payment methods, fraud protection
+      - **Weaknesses**: Limited billing features, PayPal dependency
+      - **Best For**: Payment processing focus, PayPal ecosystem
+      - **Cost**: 2.9% + $0.30 per transaction
     - **Zuora**: 
       - **Strengths**: Enterprise-grade, complex pricing models, revenue recognition
       - **Weaknesses**: Very expensive, complex implementation, overkill for startups
@@ -1061,93 +1025,10 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
       - **Weaknesses**: Limited advanced features, smaller ecosystem
       - **Best For**: Mid-market businesses, developer-focused teams
       - **Cost**: $149-1,499/month (tiered pricing)
-    - **Braintree**: 
-      - **Strengths**: PayPal integration, global payment methods, fraud protection
-      - **Weaknesses**: Limited billing features, PayPal dependency
-      - **Best For**: Payment processing focus, PayPal ecosystem
-      - **Cost**: 2.9% + $0.30 per transaction
 
-- **Build vs Buy Deep Analysis**:
-  - **Build Custom Billing**:
-    - **Development Time**: 12-18 months (full-time team of 3-5 engineers)
-    - **Initial Cost**: $500K-1M (development + infrastructure)
-    - **Ongoing Cost**: $200K-400K/year (maintenance + compliance)
-    - **Risks**: Compliance complexity, payment security, tax calculations, international regulations
-    - **Benefits**: Perfect customization, no vendor lock-in, full control
-  - **Buy Existing Solution**:
-    - **Implementation Time**: 1-3 months (integration + customization)
-    - **Initial Cost**: $10K-50K (setup + integration)
-    - **Ongoing Cost**: $50K-200K/year (licensing + transaction fees)
-    - **Risks**: Vendor lock-in, limited customization, dependency on vendor roadmap
-    - **Benefits**: Faster time-to-market, proven security, compliance handled, ongoing updates
-  - **Hybrid Approach (Lago + Stripe)**:
-    - **Implementation Time**: 2-4 months (Lago setup + Stripe integration)
-    - **Initial Cost**: $20K-50K (Lago hosting + Stripe setup + integration)
-    - **Ongoing Cost**: $10K-30K/year (hosting + Stripe fees + maintenance)
-    - **Risks**: Self-hosted complexity, technical expertise required, ongoing maintenance
-    - **Benefits**: No vendor lock-in, full customization, cost-effective, proven payment processing
+- **Chosen Option**: *Trial Lago (open source)*
+  - **Rationale**: Lago is perfect for our discovery phase because it's free, open-source, and gives us complete control over billing logic without vendor lock-in, while its modern architecture and developer-friendly APIs let us experiment with different pricing models and learn customer behavior patterns.
 
-- **Pricing tiers**: **Multi-tier Pricing with Business Justification**
-  - **Free Tier**: 
-    - **Included**: 10 jobs/month, basic support, standard SLA
-    - **Business Value**: Customer acquisition, product trial, market penetration
-    - **Limitations**: No advanced features, limited support, basic SLA
-  - **Starter Tier ($29/month)**:
-    - **Included**: 100 jobs/month, priority support, enhanced SLA
-    - **Business Value**: Entry-level paid customers, predictable revenue
-    - **Target**: Small businesses, individual developers
-  - **Professional Tier ($99/month)**:
-    - **Included**: 500 jobs/month, priority support, advanced features, enhanced SLA
-    - **Business Value**: Growing businesses, higher revenue per customer
-    - **Target**: Professional, scaling startups
-  - **Business Tier ($299/month)**:
-    - **Included**: 2000 jobs/month, dedicated support, all features, premium SLA
-    - **Business Value**: Large customers, high-value relationships
-    - **Target**: Business customers, high-volume users
-  - **Enterprise**:
-    - **Included**: Unlimited jobs, custom features, dedicated support, custom SLA
-    - **Business Value**: Strategic partnerships, maximum revenue per customer
-    - **Target**: Fortune 500, strategic accounts
-
-- **Usage metrics**: **Job-based Billing with Accuracy Requirements**
-  - **Primary Metric**: Jobs-related (job creation + completion + confirmation)
-  - **Secondary Metrics**: 
-    - **Compute Time**: Actual execution time for resource-based pricing
-    - **Data Volume**: Input/output size for storage-based pricing
-    - **API Calls**: Individual API usage for granular billing
-  - **Accuracy Requirements**: 
-    - **Event Tracking**: 99.9% accuracy for billing events
-    - **Usage Measurement**: Real-time tracking with 99.99% uptime
-    - **Billing Calculation**: Automated calculation with audit trail
-  - **Overage Pricing**: 
-    - **Starter**: $0.50 per additional job
-    - **Professional**: $0.30 per additional job
-    - **Enterprise**: $0.20 per additional job
-
-- **Invoice structure**: **Detailed Billing with Audit Trail**
-  - **Line Items**: 
-    - **Base Subscription**: Monthly recurring charge
-    - **Usage Charges**: Overage jobs at tier-specific rates
-    - **Compute Time**: Resource consumption charges
-    - **Data Transfer**: Input/output data charges
-    - **Support**: Priority support charges (if applicable)
-  - **Calculations**: 
-    - **Automated**: Real-time usage tracking and calculation
-    - **Audit Trail**: Complete event history for billing verification
-    - **Adjustments**: Credit for failed jobs, refunds for overages
-  - **Transparency**: 
-    - **Usage Dashboard**: Real-time usage tracking for customers
-    - **Billing Details**: Line-by-line breakdown of charges
-    - **Predictions**: Usage forecasting and cost optimization
-
-- **Billing frequency**: **Monthly Billing with Usage Tracking**
-  - **Base Subscription**: Monthly recurring billing
-  - **Usage Charges**: Monthly billing for overage usage
-  - **Payment Terms**: Net 30 for enterprise, immediate for others
-  - **Customer Preferences**: 
-    - **Self-service**: Credit card for immediate payment
-    - **Enterprise**: Invoice-based billing with payment terms
-    - **Usage Alerts**: Real-time notifications for usage approaching limits
 
 #### Event Processing
 
@@ -1183,65 +1064,8 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
   - **Ingestion Architecture**: 
     - **Event Bus**: AWS SNS/EventBridge + SQS for reliable event queuing with 14-day retention
     - **Event Routing**: AWS EventBridge for complex event patterns and routing
-      - **Event Rules**: Route events based on content and patterns (job type, tenant, priority)
-      - **Event Transformation**: Transform events for different consumers (billing, analytics, alerts)
-      - **Event Filtering**: Filter events before routing to reduce processing costs
-      - **Event Integration**: Connect with external services and AWS services
-    - **Event Store**: Database + Redis cache for event persistence and high-performance access
-    - **Event Validation**: Schema validation and business rule validation at ingestion
+    - **Event Store**: MongoDB for event persistence and Redis cache high-performance access
 
-- **Event processing**: *Multi-tier Processing with Business Requirements*
-  - **Real-time Processing**: 
-    - **Billing Events**: Immediate processing for job creation, completion, confirmation
-    - **Quota Events**: Real-time quota tracking and enforcement
-    - **Alert Events**: Immediate processing for system alerts and notifications
-    - **Processing Engine**: AWS Lambda for real-time event processing
-  - **Batch Processing**: 
-    - **Analytics Events**: Daily/weekly/monthly analytics processing
-    - **Reporting Events**: Periodic report generation and data aggregation
-    - **Audit Events**: Compliance and audit trail processing
-    - **Processing Engine**: AWS Lambda + Database for batch analytics processing
-  - **Event-driven Processing**: 
-    - **Business Logic**: Event-triggered business rules and workflows
-    - **Notifications**: Event-triggered customer notifications and alerts
-    - **Workflows**: Event-driven business process automation
-    - **Processing Engine**: AWS Lambda for event-driven serverless processing
-
-- **Late arrival handling**: *Temporal Event Processing with Adjustment Logic*
-  - **Event Ordering**: Maintain event sequence for accurate lifecycle tracking
-  - **Late Events**: Handle events that arrive out of order or after processing window
-  - **Adjustment Logic**: 
-    - **Billing Adjustments**: Credit for late-arriving completion events
-    - **Quota Adjustments**: Update quota usage for late-arriving events
-    - **Analytics Adjustments**: Recalculate analytics for late-arriving events
-  - **Temporal Windows**: 
-    - **Billing Window**: 24-hour window for late-arriving billing events
-    - **Analytics Window**: 7-day window for late-arriving analytics events
-    - **Audit Window**: 30-day window for late-arriving audit events
-  - **Reconciliation**: 
-    - **Event Correlation**: Link related events across temporal windows
-    - **State Management**: Maintain event state for late-arriving events
-    - **Adjustment Processing**: Automated adjustment for late-arriving events
-
-- **Reconciliation**: *Billing Accuracy Verification with Audit Requirements*
-  - **Event Verification**: 
-    - **Completeness Check**: Verify all expected events are received
-    - **Consistency Check**: Verify event data consistency across sources
-    - **Accuracy Check**: Verify billing calculations are correct
-  - **Audit Requirements**: 
-    - **Event Trail**: Complete audit trail for all billing events
-    - **Calculation Log**: Detailed log of all billing calculations
-    - **Adjustment Log**: Log of all billing adjustments and corrections
-    - **Compliance**: Meet regulatory requirements for billing accuracy
-  - **Reconciliation Process**: 
-    - **Daily Reconciliation**: Daily verification of billing accuracy
-    - **Monthly Reconciliation**: Monthly audit of billing calculations
-    - **Quarterly Reconciliation**: Quarterly compliance and audit review
-    - **Exception Handling**: Automated exception detection and manual review
-  - **Accuracy Metrics**: 
-    - **Event Accuracy**: 99.9% accuracy for billing events
-    - **Calculation Accuracy**: 99.99% accuracy for billing calculations
-    - **Reconciliation Accuracy**: 100% accuracy for audit reconciliation
 
 #### Invoice Mapping
 
@@ -1336,7 +1160,7 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
 
 ### Data Models
 
-**Note**: Pricing Plan relasted model are relevant if we gonna use **open source** solution from **Lago**
+**Note**: Pricing Plan models are relevant if we gonna use **open source** solution from **Lago**
 
 - **Entities**
   - *Tenant*
