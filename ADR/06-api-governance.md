@@ -109,8 +109,8 @@
   - Path-Based Versioning
 
 - **Deprecation Notice**:
-  - 12 months *(adopted industry wide)*
-  - 24 months *(x2 for enterprises)*
+  - 12 months `(adopted industry wide)`
+  - 24 months `(x2 for enterprises)`
 
 ---
 
@@ -143,7 +143,7 @@
 - **Trade-offs**:
   - **Client Simplicity vs Developer Simplicity**
 
-- **Chosen Approach**: *Client Simplicity*
+- **Chosen Approach**: `Client Simplicity`
 
 - **Error Response Format**:
   - **Content-Type**: application/problem+json
@@ -229,7 +229,7 @@
   - **Client Simplicity vs Client Control**
   - **Client Simplicity vs Deduplication Guarantees**
 
-- **Chosen Approach**: *Client-controlled with UUID*
+- **Chosen Approach**: `Client-controlled with UUID`
   - **Rationale** It balances client simplicity and deduplication guarantees.
 
 - **Default Cache TTL**: 24 hours

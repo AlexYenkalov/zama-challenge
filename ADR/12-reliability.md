@@ -28,8 +28,8 @@
 
 - **Chosen Approach**:
   - **SLOs**
-    - *99.9%* for *POST/PUT/DELETE*
-    - *99.95%* for *GET*
+    - `99.9%` for `POST/PUT/DELETE`
+    - `99.95%` for `GET`
   - **Rationale**: 
     - POST operations are complex (job creation) and can tolerate brief outages
     - PUT operations are complex (job status updates) and can tolerate brief outages
@@ -43,67 +43,67 @@
 
 | **Option**       | **Err Budget** | **Burn Rate** | **Response Actions**               | **Pros**               | **Cons**                       | **Best For**      |
 |------------------|----------------|---------------|------------------------------------|------------------------|--------------------------------|-------------------|
-| *Zero-Tolerance* | 0.05% (4.4h/y) | 1.2x, 2x      | Immediate restrictions (freeze)    | Max reliability        | Restrictive, kills innovation  | Financial systems |
-| *Conservative*   | 0.1% (8.8h/y)  | 2x, 10x       | Auto-reduce, freeze deployments    | Max safety             | Too restrictive, hurts growth  | Mature systems    |
-| *Moderate*       | 0.1% (8.8h/y)  | 1.5x, 3x, 6x  | Learning-focused, root cause       | Balanced safety/growth | Requires more monitoring       | New services      |
-| *Growth-First*   | 0.2% (17.5h/y) | 2x, 4x        | Min restrictions, focus on scaling | Optimized for growth   | Higher error rates acceptable  | Startups          |
-| *Aggressive*     | 0.3% (26.3h/y) | 2x, 5x        | Min restrictions, focus on fixes   | Rapid iteration        | Higher risk tolerance          | Internal services |
-| *Adaptive*       | 0.1%→0.05%     | 1.5x, 3x, 6x  | Start loose, tighten as matures    | Data-driven            | Complex to implement           | New services      |
+| `Zero-Tolerance` | 0.05% (4.4h/y) | 1.2x, 2x      | Immediate restrictions (freeze)    | Max reliability        | Restrictive, kills innovation  | Financial systems |
+| `Conservative`   | 0.1% (8.8h/y)  | 2x, 10x       | Auto-reduce, freeze deployments    | Max safety             | Too restrictive, hurts growth  | Mature systems    |
+| `Moderate`       | 0.1% (8.8h/y)  | 1.5x, 3x, 6x  | Learning-focused, root cause       | Balanced safety/growth | Requires more monitoring       | New services      |
+| `Growth-First`   | 0.2% (17.5h/y) | 2x, 4x        | Min restrictions, focus on scaling | Optimized for growth   | Higher error rates acceptable  | Startups          |
+| `Aggressive`     | 0.3% (26.3h/y) | 2x, 5x        | Min restrictions, focus on fixes   | Rapid iteration        | Higher risk tolerance          | Internal services |
+| `Adaptive`       | 0.1%→0.05%     | 1.5x, 3x, 6x  | Start loose, tighten as matures    | Data-driven            | Complex to implement           | New services      |
 
 - **Error Budget Definition** `(Moderate Approach for New Service)`:
-  - **HIGH Criticality** (50% buffer): 0.1% error budget (8.77 hours/year) - *Zero tolerance for SLO violations during critical launch phase*
-  - **MEDIUM Criticality** (35% buffer): 0.1% error budget (8.77 hours/year) - *Consistent with new service learning approach*
-  - **LOW Criticality** (15% buffer): 0.1% error budget (8.77 hours/year) - *Unified error budget for new service simplicity*
+  - **HIGH Criticality** (50% buffer): 0.1% error budget (8.77 hours/year) - `Zero tolerance for SLO violations during critical launch phase`
+  - **MEDIUM Criticality** (35% buffer): 0.1% error budget (8.77 hours/year) - `Consistent with new service learning approach`
+  - **LOW Criticality** (15% buffer): 0.1% error budget (8.77 hours/year) - `Unified error budget for new service simplicity`
   
   **Rationale**: New services require consistent, conservative error budgets across all criticality levels to ensure zero tolerance for SLO violations during the critical launch phase, while allowing for learning and optimization.
 
 - **Endpoint-Specific Error Budgets** `(All 0.1% for New Service Simplicity)`:
-  - **Jobs API** (HIGH): 0.1% (8.77h/year) - *Revenue-critical, zero tolerance*
-  - **Users API** (HIGH): 0.1% (8.77h/year) - *Customer-facing, zero tolerance*
-  - **Billing API** (HIGH): 0.1% (8.77h/year) - *Financial data, zero tolerance*
-  - **Webhooks API** (HIGH): 0.1% (8.77h/year) - *Critical path, zero tolerance*
-  - **Analytics API** (MEDIUM): 0.1% (8.77h/year) - *Consistent with new service approach*
-  - **System API** (LOW): 0.1% (8.77h/year) - *Unified approach for simplicity*
+  - **Jobs API** (HIGH): 0.1% (8.77h/year) - `Revenue-critical, zero tolerance`
+  - **Users API** (HIGH): 0.1% (8.77h/year) - `Customer-facing, zero tolerance`
+  - **Billing API** (HIGH): 0.1% (8.77h/year) - `Financial data, zero tolerance`
+  - **Webhooks API** (HIGH): 0.1% (8.77h/year) - `Critical path, zero tolerance`
+  - **Analytics API** (MEDIUM): 0.1% (8.77h/year) - `Consistent with new service approach`
+  - **System API** (LOW): 0.1% (8.77h/year) - `Unified approach for simplicity`
 
 - **Burn Rate Policies** `(Learning-Oriented)`:
-  - **Normal Burn Rate**: 1x (within SLO) - *Baseline performance*
-  - **Learning Burn Rate**: 1.5x (new service discovery phase) - *Expected during learning, monitor and document*
-  - **High Burn Rate**: 3x (investigate but don't panic) - *Alert on-call, continue learning*
-  - **Critical Burn Rate**: 6x (90% of error budget consumed) - *Page engineer, focus on root cause*
+  - **Normal Burn Rate**: 1x (within SLO) - `Baseline performance`
+  - **Learning Burn Rate**: 1.5x (new service discovery phase) - `Expected during learning, monitor and document`
+  - **High Burn Rate**: 3x (investigate but don't panic) - `Alert on-call, continue learning`
+  - **Critical Burn Rate**: 6x (90% of error budget consumed) - `Page engineer, focus on root cause`
 
 - **Response Actions**:
 
-  - **0.5x Burn Rate**: *Under-utilized budget*
+  - **0.5x Burn Rate**: `Under-utilized budget`
     - Review SLO targets for optimization
     - Consider tightening error budget
     - Monitor for cost efficiency opportunities
 
-  - **1.5x Burn Rate**: *Learning phase*
+  - **1.5x Burn Rate**: `Learning phase`
     - Monitor closely and document patterns
     - Set 30-day learning phase timeline
     - Define success criteria for learning exit
     - No action required, while in learning phase
 
-  - **3x Burn Rate**: *High burn rate*
+  - **3x Burn Rate**: `High burn rate`
     - Alert on-call engineer 
     - Investigate root cause within 24 hours
     - Continue learning while investigating
     - Set escalation criteria if no resolution
-      - See *Incident Response Procedures* below
+      - See `Incident Response Procedures` below
   
-  - **6x Burn Rate**: *Critical situation*
+  - **6x Burn Rate**: `Critical situation`
     - Page on-call engineer immediately 
     - Escalate to engineering manager
-      - See *Incident Response Procedures* below
+      - See `Incident Response Procedures` below
     - Focus on root cause analysis
     - Avoid auto-reduce rate limits (hurts growth)
     - Avoid freeze deployments (prevents iteration)
 
-  - **10x+ Burn Rate**: *Emergency situation*
+  - **10x+ Burn Rate**: `Emergency situation`
     - Activate emergency response team
     - Implement immediate rollback procedures
     - Communicate with stakeholders
-      - See *Incident Response Procedures* below
+      - See `Incident Response Procedures` below
     - Plan post-incident review
 
 
@@ -111,40 +111,40 @@
   
   - **Example 0**
 
-    - **Error Budget Rate**: *0.1% budget rate*
-    - **Daily Error Rate**: *0.12% actual rate* i.e. *1.2x daily burn rate*
+    - **Error Budget Rate**: `0.1% budget rate`
+    - **Daily Error Rate**: `0.12% actual rate` i.e. `1.2x daily burn rate`
 
-    - **Daily Burn Rate**: *1.2x daily burn rate*
+    - **Daily Burn Rate**: `1.2x daily burn rate`
       - Formaula: `Daily Error Rate` ÷ `Error Budget Rate`
       - Example: `0.12% daily error rate` ÷ `0.1% error budget rate`
 
-    - **Annual Error Budget**: *8.77 hours/year*
+    - **Annual Error Budget**: `8.77 hours/year`
 
-    - **Daily Error Budget**: *0.024 hours/day*
+    - **Daily Error Budget**: `0.024 hours/day`
       - Formaula: `Annual Error Budget` ÷ 365 days
       - Example: `8.77 hours/year` ÷ 365 days
 
-    - **Daily Error Hours**: *0.029 hours/day*
+    - **Daily Error Hours**: `0.029 hours/day`
       - Formaula: `Daily Error Budget` × `Daily Burn Rate`
       - Example: `0.024 hours/day` × `1.2x`
 
-    - **Consumed Error Budget**: *0.87 hours*
+    - **Consumed Error Budget**: `0.87 hours`
       - Formaula: `Daily Error Hours` × 30 days
       - Example: `0.029 hours/day` × 30 days
 
-    - **Remaining Error Budget**: *7.90 hours/year* i.e. *90%*
+    - **Remaining Error Budget**: `7.90 hours/year` i.e. `90%`
       - Formaula: (`Annual Error Budget` - `Consumed Error Budget`) ÷ `Annual Error Budget` × 100%
       - Example: (`8.77 hours/year` - `0.87 hours`) ÷ `8.77 hours/year` × 100%
 
-    - **Time to Exhaustion**: *272 days*
+    - **Time to Exhaustion**: `272 days`
       - Formaula: `Remaining Error Budget` ÷ `Daily Error Hours`
       - Example: `7.90 hours/year` ÷ `0.029 hours/day`
 
   - **Example 1: Normal Operation (Day 30)**
     - Annual Error Budget: 8.77 hours/year
     - Daily Error Budget: 8.77h ÷ 365 = 0.024 hours/day
-    - Daily Error Rate: *0.075% (below budget)*
-    - Daily Burn Rate: 0.075% ÷ 0.1% = *0.75x*
+    - Daily Error Rate: `0.075% (below budget)`
+    - Daily Burn Rate: 0.075% ÷ 0.1% = `0.75x`
     - Consumed Error Budget: 30 days × 0.024h × 0.75 = 0.54 hours
     - Remaining Error Budget: (8.77h - 0.54h) ÷ 8.77h × 100% = 94%
     - Time to Exhaustion: 8.23h ÷ (0.024h × 0.75) = 456 days
@@ -153,8 +153,8 @@
   - **Example 2: Learning Phase (Day 45)**
     - Annual Error Budget: 8.77 hours/year
     - Daily Error Budget: 0.024 hours/day
-    - Daily Error Rate: *0.15% (above budget)*
-    - Daily Burn Rate: 0.15% ÷ 0.1% = *1.5x*
+    - Daily Error Rate: `0.15% (above budget)`
+    - Daily Burn Rate: 0.15% ÷ 0.1% = `1.5x`
     - Consumed Error Budget: 45 days × 0.024h × 1.5 = 1.62 hours
     - Remaining Error Budget: (8.77h - 1.62h) ÷ 8.77h × 100% = **81%**
     - Time to Exhaustion: 7.15h ÷ (0.024h × 1.5) = 198 days
@@ -163,8 +163,8 @@
   - **Example 3: High Burn Rate (Day 60)**
     - Annual Error Budget: 8.77 hours/year
     - Daily Error Budget: 0.024 hours/day
-    - Daily Error Rate: *0.3% (3x budget)*
-    - Daily Burn Rate: 0.3% ÷ 0.1% = *3x*
+    - Daily Error Rate: `0.3% (3x budget)`
+    - Daily Burn Rate: 0.3% ÷ 0.1% = `3x`
     - Consumed Error Budget: 60 days × 0.024h × 3 = 4.32 hours
     - Remaining Error Budget: (8.77h - 4.32h) ÷ 8.77h × 100% = **51%**
     - Time to Exhaustion: 4.45h ÷ (0.024h × 3) = 62 days
@@ -173,8 +173,8 @@
   - **Example 4: Critical Situation (Day 75)**
     - Annual Error Budget: 8.77 hours/year
     - Daily Budget: 0.024 hours/day
-    - Daily Error Rate: *0.6% (6x budget)*
-    - Daily Burn Rate: 0.6% ÷ 0.1% = *6x*
+    - Daily Error Rate: `0.6% (6x budget)`
+    - Daily Burn Rate: 0.6% ÷ 0.1% = `6x`
     - Consumed Error Budget: 75 days × 0.024h × 6 = 10.8 hours
     - Remaining Error Budget: (8.77h - 10.8h) ÷ 8.77h × 100% = **-23%**
     - Time to Exhaustion: 0 days (budget exhausted)
@@ -324,9 +324,9 @@
           - 1-3ms: Cache miss penalties `(Redis cache misses)`
           - 2-5ms: Database connection pooling `(Connection overhead)`
           - 5-15ms: Database load (job creation) `(Optimized database operations)`
-            - *high value operation:* **job creation**
-            - *5-10ms could be saved* if async via SNS/SQS
-            - *keeping it sync* for **immediate client feedback**
+            - `high value operation:` **job creation**
+            - `5-10ms could be saved` if async via SNS/SQS
+            - `keeping it sync` for **immediate client feedback**
           - 10-50ms: AWS SNS publish `(Event notifications)`
           - 1-3ms: Response generation `(JSON serialization)`
           - 1-2ms: OpenTelemetry instrumentation end `(OTEL span completion, CloudWatch logs)`
@@ -362,9 +362,9 @@
           - 10-30ms: Job lookup `(Database lookup factor)`
           - 5-10ms: Status validation `(Business logic factor)`
           - 30-80ms: Database load (job status update) `(Optimized database operations)`
-            - *high value operation*: **job status update**
-            - *25-65ms could be saved* if async via SNS/SQS
-            - *keeping it sync* for **immediate client feedback**
+            - `high value operation`: **job status update**
+            - `25-65ms could be saved` if async via SNS/SQS
+            - `keeping it sync` for **immediate client feedback**
           - 10-20ms: Event emission `(Event processing factor)`
           - 1-3ms: Response generation `(JSON serialization)`
           - 1-2ms: OpenTelemetry instrumentation end `(OTEL span completion, CloudWatch logs)`
@@ -400,9 +400,9 @@
           - 10-30ms: Job lookup `(Database lookup factor)`
           - 5-10ms: Deletion validation `(Business logic factor)`
           - 20-60ms: Database load (job deletion) `(Optimized database operations)`
-            - *high value operation*: **job deletion**
-            - *15-45ms could be saved* if async via SNS/SQS
-            - *keeping it sync* for **immediate client feedback**
+            - `high value operation`: **job deletion**
+            - `15-45ms could be saved` if async via SNS/SQS
+            - `keeping it sync` for **immediate client feedback**
           - 20-50ms: Cleanup operations `(Cleanup processing factor)`
           - 10-20ms: Event emission `(Event processing factor)`
           - 1-3ms: Response generation `(JSON serialization)`
@@ -502,15 +502,15 @@
 
     - GET /analytics/jobs
 
-##### **Business Criticality**: *Market Benchmarks* for *Levels*, *Buffer Ranges*, and *Buffer Median*
+##### **Business Criticality**: `Market Benchmarks` for `Levels`, `Buffer Ranges`, and `Buffer Median`
 
-| **Source**             | **HIGH**: *Rang* / *Median* | **MEDIUM**: *Range* / *Median* | **LOW**: *Range* / *Median* |
+| **Source**             | **HIGH**: `Range` / `Median` | **MEDIUM**: `Range` / `Median` | **LOW**: `Range` / `Median` |
 |------------------------|-----------------------------|--------------------------------|-----------------------------|
-| *Google SRE*           | 40-50% / 45%                | 25-35% / 30%                   | 0-15% / 7.5%                |
-| *Netflix SRE*          | 45-55% / 50%                | 30-35% / 37.5%                 | 5-15% / 10%                 |
-| *AWS Well-Architected* | 40-50% / 45%                | 25-30% / 27.5%                 | 0-10% / 5%                  |
+| `Google SRE`           | 40-50% / 45%                | 25-35% / 30%                   | 0-15% / 7.5%                |
+| `Netflix SRE`          | 45-55% / 50%                | 30-35% / 37.5%                 | 5-15% / 10%                 |
+| `AWS Well-Architected` | 40-50% / 45%                | 25-30% / 27.5%                 | 0-10% / 5%                  |
 
-##### **Business Criticality**: *Our Guidelines*
+##### **Business Criticality**: `Our Guidelines`
 
 | **Buffer Type**   | **HIGH** | **MEDIUM** | **LOW** | **Use Case**                                                                                             |
 |-------------------|----------|------------|---------|----------------------------------------------------------------------------------------------------------|
@@ -518,14 +518,14 @@
 | **Buffer Median** | 45%      | 30%        | 7.5%    | **Standard Production** - Balanced risk/reward, most common use case, recommended default                |
 | **Buffer Upper**  | 50%      | 35%        | 15%     | **Safety-Critical** - New systems, unpredictable load, zero tolerance for SLO violations                 |
 
-**Chosen Business Criticality Buffer**: *Buffer Upper* (50%/35%/15%)
+**Chosen Business Criticality Buffer**: `Buffer Upper` (50%/35%/15%)
   - **Rationale**:
     As a new service with no performance history, and zero tolerance for SLO violations during launch phase,
-    We select conservative *Buffer Upper* approach to ensure safety margins for unknown system behavior,
+    We select conservative `Buffer Upper` approach to ensure safety margins for unknown system behavior,
     while continuous data collection enables rapid optimization based on real performance patterns rather than waiting for arbitrary 30-day periods.
 
 **Latency Measurement Process**:
-  1. **Launch with conservative estimates** using *Buffer Upper*, then collect production data continuously
+  1. **Launch with conservative estimates** using `Buffer Upper`, then collect production data continuously
   2. **Collect production data** continuously (minimum 7 days for initial validation)
   3. **Calculate actual ratios** for each endpoint from real performance data
   4. **Refine SLOs** based on measured values and business requirements
@@ -533,17 +533,17 @@
 
 | **Step**                      | **Metric** |  **Formula**     | **Description**                                                                                            |
 |-------------------------------|------------|------------------|------------------------------------------------------------------------------------------------------------|
-| **1. Measure p0 latency**     | *p0*       | [measured_prod]  | **Fastest response time** - Best case performance, represents optimal system conditions                    |
-| **2. Measure p50 latency**    | *p50*      | [measured_prod]  | **Median response time** - 50% of requests are faster, represents typical user experience                  |
-| **3. Measure p90 latency**    | *p90*      | [measured_prod]  | **90th percentile** - 90% of requests are faster, represents good performance baseline for monitoring      |
-| **4. Measure p95 latency**    | *p95*      | [measured_prod]  | **95th percentile** - 95% of requests are faster, represents worst-case for most users (SLO target)        |
-| **5. Measure p99 latency**    | *p99*      | [measured_prod]  | **99th percentile** - 99% of requests are faster, represents tail latency for edge cases and optimization  |
-| **6. Measure p100 latency**   | *p100*     | [measured_prod]  | **Slowest response time** - Worst case performance, represents system under stress conditions              |
-| **8. Biz Criticality Buffer** | *BCB*      | *Buffer Upper*   | **Biz risk tolerance** - Buffer picked based on system maturity, load predictability, biz impact tolerance |
-| **9. Define p95 SLO Target**  | *p95*      | p100 × (1 + BCB) | **SLO target with safety margin** - Conservative estimate for new service launch with biz risk protection  |
+| **1. Measure p0 latency**     | `p0`       | [measured_prod]  | **Fastest response time** - Best case performance, represents optimal system conditions                    |
+| **2. Measure p50 latency**    | `p50`      | [measured_prod]  | **Median response time** - 50% of requests are faster, represents typical user experience                  |
+| **3. Measure p90 latency**    | `p90`      | [measured_prod]  | **90th percentile** - 90% of requests are faster, represents good performance baseline for monitoring      |
+| **4. Measure p95 latency**    | `p95`      | [measured_prod]  | **95th percentile** - 95% of requests are faster, represents worst-case for most users (SLO target)        |
+| **5. Measure p99 latency**    | `p99`      | [measured_prod]  | **99th percentile** - 99% of requests are faster, represents tail latency for edge cases and optimization  |
+| **6. Measure p100 latency**   | `p100`     | [measured_prod]  | **Slowest response time** - Worst case performance, represents system under stress conditions              |
+| **8. Biz Criticality Buffer** | `BCB`      | `Buffer Upper`   | **Biz risk tolerance** - Buffer picked based on system maturity, load predictability, biz impact tolerance |
+| **9. Define p95 SLO Target**  | `p95`      | p100 × (1 + BCB) | **SLO target with safety margin** - Conservative estimate for new service launch with biz risk protection  |
 
 
-##### **Business Criticality**: *Classification Decision Matrix*:
+##### **Business Criticality**: `Classification Decision Matrix`:
 
 | **Factor**              | Level: **HIGH** `(40-55%)`        | Level: **MEDIUM** `(25-35%)`   | Level: **LOW** `(0-15%)`       |
 |-------------------------|-----------------------------------|--------------------------------|--------------------------------|
@@ -557,7 +557,7 @@
 | **Incident Response**   | 🚨 Immediate response                 | 📞 Standard response            | 📧 Low priority response       |
 | **Monitoring Priority** | 🔴 Critical alerts                | 🟡 Standard monitoring          | 🟢 Basic monitoring            |
 
-##### **Business Criticality**: *Classification Decision Tree*
+##### **Business Criticality**: `Classification Decision Tree`
 
 ```ts
 1. PRIMARY CLASSIFICATION (Required):
@@ -576,63 +576,63 @@
    └─ Document reasoning for audit trail
 ```
 
-##### **Business Criticality**: *API Endpoint Classification*
+##### **Business Criticality**: `API Endpoint Classification`
 
 | **Endpoint**                         | **Level** | **Buffer** | **Justification**                                                                           |
 |--------------------------------------|-----------|------------|---------------------------------------------------------------------------------------------|
-| *GET* **/system/health**             | LOW       | 15%        | ❌ No customer interaction + ❌ No revenue impact + 🏠 Internal service                      |
-| *GET* **/system/ready**              | LOW       | 15%        | ❌ No customer interaction + ❌ No revenue impact + 🏠 Internal service                      |
+| `GET` **/system/health**             | LOW       | 15%        | ❌ No customer interaction + ❌ No revenue impact + 🏠 Internal service                      |
+| `GET` **/system/ready**              | LOW       | 15%        | ❌ No customer interaction + ❌ No revenue impact + 🏠 Internal service                      |
 |--------------------------------------|-----------|------------|---------------------------------------------------------------------------------------------|
-| *POST*   **/jobs**                   | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
-| *PUT*    **/jobs/{id}**              | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
-| *GET*    **/jobs/{id}**              | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
-| *DELETE* **/jobs/{id}**              | *MEDIUM*  | *35%*      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 🔧 Supporting service        |
-| *GET*    **/jobs/{id}/outputs**      | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
-| *GET*    **/jobs/{id}/outputs/{id}** | *MEDIUM*  | *35%*      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 🔧 Supporting service        |
-| *POST*   **/jobs/reconcile**         | LOW       | 15%        | ❌ No customer interaction + ❌ No revenue impact + 🏠 Internal service                      |
+| `POST`   **/jobs**                   | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
+| `PUT`    **/jobs/{id}**              | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
+| `GET`    **/jobs/{id}**              | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
+| `DELETE` **/jobs/{id}**              | `MEDIUM`  | `35%`      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 🔧 Supporting service        |
+| `GET`    **/jobs/{id}/outputs**      | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
+| `GET`    **/jobs/{id}/outputs/{id}** | `MEDIUM`  | `35%`      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 🔧 Supporting service        |
+| `POST`   **/jobs/reconcile**         | LOW       | 15%        | ❌ No customer interaction + ❌ No revenue impact + 🏠 Internal service                      |
 |--------------------------------------|-----------|------------|---------------------------------------------------------------------------------------------|
-| *POST*   **/users**                  | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
-| *GET*    **/users/{id}**             | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
-| *PUT*    **/users/{id}**             | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
-| *DELETE* **/users/{id}**             | *MEDIUM*  | *35%*      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 🔧 Supporting service        |
+| `POST`   **/users**                  | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
+| `GET`    **/users/{id}**             | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
+| `PUT`    **/users/{id}**             | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
+| `DELETE` **/users/{id}**             | `MEDIUM`  | `35%`      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 🔧 Supporting service        |
 |--------------------------------------|-----------|------------|---------------------------------------------------------------------------------------------|
-| *POST* **/webhooks/events**          | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
-| *GET*  **/webhooks/subscriptions**   | *MEDIUM*  | *35%*      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 🔧 Supporting service        |
+| `POST` **/webhooks/events**          | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔗 Critical path service     |
+| `GET`  **/webhooks/subscriptions**   | `MEDIUM`  | `35%`      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 🔧 Supporting service        |
 |--------------------------------------|-----------|------------|---------------------------------------------------------------------------------------------|
-| *POST* **/billing/charges**          | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔒 Critical data (financial) |
-| *GET*  **/billing/invoices**         | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔒 Critical data (financial) |
+| `POST` **/billing/charges**          | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔒 Critical data (financial) |
+| `GET`  **/billing/invoices**         | **HIGH**  | **50%**    | ✅ Direct customer interaction + ✅ Direct revenue generation + 🔒 Critical data (financial) |
 |--------------------------------------|-----------|------------|---------------------------------------------------------------------------------------------|
-| *GET*  **/analytics/usage**          | *MEDIUM*  | *35%*      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 📊 Standard business data    |
-| *GET* **/analytics/reports**         | *MEDIUM*  | *35%*      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 📊 Standard business data    |
+| `GET`  **/analytics/usage**          | `MEDIUM`  | `35%`      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 📊 Standard business data    |
+| `GET` **/analytics/reports**         | `MEDIUM`  | `35%`      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 📊 Standard business data    |
 
 
-##### **API Endpoint Latency Measurements (p0/p50/p99/100)** + **Estimated** *p95* **Targets**:
+##### **API Endpoint Latency Measurements (p0/p50/p99/100)** + **Estimated** `p95` **Targets**:
 
 | **Endpoint**                         | **Level** | **Buffer** | **p0** | **p50** | **p99** | **p100** | **p95 Target** |
 |--------------------------------------|-----------|------------|--------|---------|---------|----------|-----------------|
-| *GET* **/system/health**             | LOW       | 15%        | 10ms   | 25ms    | 45ms    | 50ms     | **50ms**       |
+| `GET` **/system/health**             | LOW       | 15%        | 10ms   | 25ms    | 45ms    | 50ms     | **50ms**       |
 |--------------------------------------|-----------|------------|--------|---------|---------|----------|-----------------|
-| *POST*   **/jobs**                   | **HIGH**  | **50%**    | 50ms   | 150ms   | 250ms   | 300ms    | **263ms**      |
-| *PUT*    **/jobs/{id}**              | **HIGH**  | **50%**    | 80ms   | 200ms   | 350ms   | 400ms    | **383ms**      |
-| *GET*    **/jobs/{id}**              | **HIGH**  | **50%**    | 30ms   | 120ms   | 180ms   | 220ms    | **210ms**      |
-| *DELETE* **/jobs/{id}**              | *MEDIUM*  | *35%*      | 60ms   | 180ms   | 320ms   | 380ms    | **365ms**      |
-| *GET*    **/jobs/{id}/outputs**      | **HIGH**  | **50%**    | 40ms   | 130ms   | 190ms   | 230ms    | **218ms**      |
-| *GET*    **/jobs/{id}/outputs/{id}** | *MEDIUM*  | *35%*      | 35ms   | 110ms   | 160ms   | 200ms    | **190ms**      |
-| *POST*   **/jobs/reconcile**         | LOW       | 15%        | 20ms   | 80ms    | 110ms   | 130ms    | **120ms**      |
+| `POST`   **/jobs**                   | **HIGH**  | **50%**    | 50ms   | 150ms   | 250ms   | 300ms    | **263ms**      |
+| `PUT`    **/jobs/{id}**              | **HIGH**  | **50%**    | 80ms   | 200ms   | 350ms   | 400ms    | **383ms**      |
+| `GET`    **/jobs/{id}**              | **HIGH**  | **50%**    | 30ms   | 120ms   | 180ms   | 220ms    | **210ms**      |
+| `DELETE` **/jobs/{id}**              | `MEDIUM`  | `35%`      | 60ms   | 180ms   | 320ms   | 380ms    | **365ms**      |
+| `GET`    **/jobs/{id}/outputs**      | **HIGH**  | **50%**    | 40ms   | 130ms   | 190ms   | 230ms    | **218ms**      |
+| `GET`    **/jobs/{id}/outputs/{id}** | `MEDIUM`  | `35%`      | 35ms   | 110ms   | 160ms   | 200ms    | **190ms**      |
+| `POST`   **/jobs/reconcile**         | LOW       | 15%        | 20ms   | 80ms    | 110ms   | 130ms    | **120ms**      |
 |--------------------------------------|-----------|------------|--------|---------|---------|----------|-----------------|
-| *POST*   **/users**                  | **HIGH**  | **50%**    | 60ms   | 160ms   | 250ms   | 300ms    | **280ms**      |
-| *GET*    **/users/{id}**             | **HIGH**  | **50%**    | 25ms   | 110ms   | 170ms   | 210ms    | **200ms**      |
-| *PUT*    **/users/{id}**             | **HIGH**  | **50%**    | 70ms   | 180ms   | 280ms   | 340ms    | **320ms**      |
-| *DELETE* **/users/{id}**             | *MEDIUM*  | *35%*      | 45ms   | 140ms   | 220ms   | 270ms    | **250ms**      |
+| `POST`   **/users**                  | **HIGH**  | **50%**    | 60ms   | 160ms   | 250ms   | 300ms    | **280ms**      |
+| `GET`    **/users/{id}**             | **HIGH**  | **50%**    | 25ms   | 110ms   | 170ms   | 210ms    | **200ms**      |
+| `PUT`    **/users/{id}**             | **HIGH**  | **50%**    | 70ms   | 180ms   | 280ms   | 340ms    | **320ms**      |
+| `DELETE` **/users/{id}**             | `MEDIUM`  | `35%`      | 45ms   | 140ms   | 220ms   | 270ms    | **250ms**      |
 |--------------------------------------|-----------|------------|--------|---------|---------|----------|-----------------|
-| *POST* **/webhooks/events**          | **HIGH**  | **50%**    | 80ms   | 180ms   | 270ms   | 320ms    | **300ms**      |
-| *GET*  **/webhooks/subscriptions**   | *MEDIUM*  | *35%*      | 30ms   | 100ms   | 150ms   | 180ms    | **180ms**      |
+| `POST` **/webhooks/events**          | **HIGH**  | **50%**    | 80ms   | 180ms   | 270ms   | 320ms    | **300ms**      |
+| `GET`  **/webhooks/subscriptions**   | `MEDIUM`  | `35%`      | 30ms   | 100ms   | 150ms   | 180ms    | **180ms**      |
 |--------------------------------------|-----------|------------|--------|---------|---------|----------|-----------------|
-| *POST* **/billing/charges**          | **HIGH**  | **50%**    | 90ms   | 200ms   | 300ms   | 350ms    | **350ms**      |
-| *GET*  **/billing/invoices**         | **HIGH**  | **50%**    | 40ms   | 120ms   | 190ms   | 230ms    | **220ms**      |
+| `POST` **/billing/charges**          | **HIGH**  | **50%**    | 90ms   | 200ms   | 300ms   | 350ms    | **350ms**      |
+| `GET`  **/billing/invoices**         | **HIGH**  | **50%**    | 40ms   | 120ms   | 190ms   | 230ms    | **220ms**      |
 |--------------------------------------|-----------|------------|--------|---------|---------|----------|-----------------|
-| *GET*  **/analytics/usage**          | *MEDIUM*  | *35%*      | 35ms   | 110ms   | 170ms   | 210ms    | **200ms**      |
-| *GET* **/analytics/reports**         | *MEDIUM*  | *35%*      | 45ms   | 130ms   | 210ms   | 260ms    | **250ms**      |
+| `GET`  **/analytics/usage**          | `MEDIUM`  | `35%`      | 35ms   | 110ms   | 170ms   | 210ms    | **200ms**      |
+| `GET` **/analytics/reports**         | `MEDIUM`  | `35%`      | 45ms   | 130ms   | 210ms   | 260ms    | **250ms**      |
 
 
 ---

@@ -53,7 +53,7 @@
   - **Maintenance vs Control**: Better-Auth reduces maintenance overhead while providing sufficient control for our use case
   - **Compliance vs Speed**: Better-Auth enables fast implementation while providing foundation for future compliance requirements
 
-- **Chosen Approach**: *Managed OIDC/OAuth 2.0 Service with MFA (Passkeys, TOTP) -> Auth0*
+- **Chosen Approach**: `Managed OIDC/OAuth 2.0 Service with MFA (Passkeys, TOTP) -> Auth0`
   - **Rationale**: Enterprise-grade and feature-rich auth in days
 
 - **Auth method**: OIDC/OAuth 2.0 Authorization Code Flow with PKCE
@@ -133,7 +133,7 @@
   - **Maintenance vs Security**: RBAC reduces maintenance overhead while providing sufficient security for multi-tenant isolation
   - **Standardization vs Customization**: OAuth 2.0 scopes provide industry-standard approach with broad ecosystem support
 
-- **Chosen Approach**: *RBAC with OAuth 2.0 Scopes + Tenant Isolation*
+- **Chosen Approach**: `RBAC with OAuth 2.0 Scopes + Tenant Isolation`
   - **Rationale**: Combines the simplicity of RBAC with the granularity of OAuth scopes, providing both user-friendly role management and fine-grained API access control
 
 - **Access control**: **RBAC with OAuth 2.0 scope enforcement**
@@ -158,34 +158,34 @@
     - **Analytics**
       - `analytics:read` - Access tenant analytics and reports
   - **Scope-to-Role Mapping**: Each role has predefined scope combinations, preventing privilege escalation
-    - **Tenant Viewer** *(own tenant only)* - **Can see job information, status, and outputs**: 
+    - **Tenant Viewer** `(own tenant only)` - **Can see job information, status, and outputs**: 
       - `jobs:status:read`
       - `users:read` 
-      - `users:update` *(only self)*
-    - **Tenant Developer** *(own tenant only)* - **Can see job information, status, and outputs**:
+      - `users:update` `(only self)`
+    - **Tenant Developer** `(own tenant only)` - **Can see job information, status, and outputs**:
       - `jobs:status:read`
       - `jobs:outputs:read` 
       - `jobs:submit`
       - `jobs:cancel`
       - `users:read`
-      - `users:update` *(only self)*
-    - **Tenant Admin** *(own tenant only)* - **Full access to job data**:
+      - `users:update` `(only self)`
+    - **Tenant Admin** `(own tenant only)` - **Full access to job data**:
       - `jobs:status:read`
       - `jobs:submit`
       - `jobs:cancel`
       - `jobs:confirm`
       - `users:read`
-      - `users:update` *(only self)*
+      - `users:update` `(only self)`
       - `users:invite`
       - `users:delete`
       - `billing:read`
       - `analytics:read` 
 
-- **Resource isolation**: *Multi-tenant data segregation with security boundaries*
+- **Resource isolation**: `Multi-tenant data segregation with security boundaries`
   - **Tenant Context**: All API requests include tenant ID in JWT claims, enforced at API gateway level
   - **Data Segregation**: Database queries automatically filtered by tenant ID, preventing cross-tenant data access
 
-- **Permission model**: *Hierarchical permissions with business logic*
+- **Permission model**: `Hierarchical permissions with business logic`
   - **Job Operations (tenant-scoped)**:
     - `jobs:status:read` - Read job information and status
     - `jobs:outputs:read` - Read job information and outputs `([result, error])` (potentially sensitive data access)
@@ -325,7 +325,7 @@
     - **Cost vs Features**: Kong Gateway provides advanced features with reasonable cost
     - **Features vs Simplicity**: Kong (advanced features) vs Traefik (simple setup) vs NGINX Plus (high performance)
 
-- **Chosen Approach**: *Kong* + *Multi-layer Rate Limiting with Token Bucket + Leaky Bucket*
+- **Chosen Approach**: `Kong` + `Multi-layer Rate Limiting with Token Bucket + Leaky Bucket`
   - **Rationale**: 
     - Comprehensive protection against different attack vectors while maintaining performance
     - **Kong Gateway Selection Rationale**: Kong provides <3ms latency and 137K+ RPS performance that's 20x faster than cloud providers, offers native support for our Token Bucket + Leaky Bucket algorithms, has a clear cost progression from free to enterprise ($250-2000), supports flexible deployment strategies, and outperforms alternatives like NGINX Plus and Traefik for API management use cases.
@@ -354,7 +354,7 @@
 
 - **Quotas**
 
-  - **Quota**: *Enforcement*: 
+  - **Quota**: `Enforcement`: 
 
     - **Monthly Job Quotas**: Per-tenant, per calendar month (Julian calendar) based on pricing plan
     - **Soft Cap (80%)**: 202 Accepted with warning headers, notifications via email/in-app/dashboard
@@ -371,7 +371,7 @@
       - **Primary**: MongoDB (transactions, durability, rich analytics)
       - **Cache Layer**: Redis (replication of quota counters, <2ms latency for quota checks)
 
-  - **Quota**: *Monitoring*: 
+  - **Quota**: `Monitoring`: 
   
     - **Performance Metrics**: <5ms latency overhead per layer, <3ms for Kong Gateway
     - **Effectiveness Metrics**: Layer 1 blocks 60-80% of abuse, Layer 2 handles 15-30%, Layer 3 catches 5-15%
@@ -497,19 +497,19 @@
   - **Rule Management**: Automated rule updates, false positive tuning, performance optimization
   - **Monitoring**: Real-time attack detection, rule effectiveness metrics, false positive tracking
 
-- **DDoS protection**: *Multi-layer DDoS Mitigation*
+- **DDoS protection**: `Multi-layer DDoS Mitigation`
   - **Volumetric Attacks**: Rate limiting at edge, traffic shaping, bandwidth throttling
   - **Application-layer**: Request pattern analysis, connection limiting, resource exhaustion prevention
   - **Infrastructure**: Global edge network, automatic scaling, traffic distribution
   - **Response**: Automatic blocking, traffic redirection, service degradation protection
 
-- **Bot detection**: *Advanced Behavioral Analysis*
+- **Bot detection**: `Advanced Behavioral Analysis`
   - **Credential Stuffing**: Login attempt pattern detection, account lockout mechanisms
   - **Scraping Protection**: Request frequency analysis, user agent validation, behavioral fingerprinting
   - **CAPTCHA Integration**: Challenge-response for suspicious activity, progressive difficulty
   - **ML Detection**: Machine learning models for bot behavior identification, continuous learning
 
-- **Threat intelligence**: *Real-time Security Feeds*
+- **Threat intelligence**: `Real-time Security Feeds`
   - **IP Reputation**: Malicious IP blocking, geographic restrictions, known attacker databases
   - **Attack Patterns**: Signature-based detection, anomaly detection, zero-day protection
   - **Update Frequency**: Real-time threat feed updates, automatic rule deployment
@@ -573,34 +573,34 @@
   - **Compliance vs Cost**: Full data protection vs performance and cost implications
   - **Validation vs Speed**: Edge validation (fast) vs backend validation (comprehensive)
 
-- **Chosen Approach**: *Multi-layered Content Security with Edge Validation*
+- **Chosen Approach**: `Multi-layered Content Security with Edge Validation`
   - **Rationale**: Comprehensive protection against injection attacks while maintaining performance
   - **Edge Validation**: JSON schema validation at edge for immediate rejection of malformed requests
   - **Performance**: <100ms validation timeout, pre-compiled schemas, lazy loading for large schemas
   - **Security**: Schema injection prevention, malicious pattern blocking, recursive validation protection
 
-- **Input validation**: *JSON Schema Validation with Sanitization*
+- **Input validation**: `JSON Schema Validation with Sanitization`
   - **Schema Validation**: Enforced at edge for all POST bodies, specific error details, 100ms timeout
   - **Sanitization**: Automatic stripping of unknown headers, query params, and body params
   - **Error Handling**: 400 Bad Request with specific validation errors, 415 Unsupported Media Type
   - **Performance**: Pre-compiled schemas, memory caching, hot reload for updates
   - **Security**: Schema integrity validation, injection attack prevention, recursive loop protection
 
-- **Size limits**: *Comprehensive Request Limits*
+- **Size limits**: `Comprehensive Request Limits`
   - **Request Body**: Maximum 1 MiB per request (prevents DoS, ensures reasonable payload size)
   - **Headers**: Maximum 8 KiB total headers, 4 KiB per individual header (prevents header flooding)
   - **Schema Size**: Maximum 1 MiB per schema (prevents memory exhaustion)
   - **Error Response**: 413 Payload Too Large with size limit information
   - **Business Justification**: Prevents resource exhaustion, ensures fair usage, protects infrastructure
 
-- **Content filtering**: *Strict Content-Type Enforcement*
+- **Content filtering**: `Strict Content-Type Enforcement`
   - **POST Requests**: `application/json` required, strict Content-Type checking
   - **Validation**: Immediate rejection of incorrect Content-Type headers
   - **Error Response**: 415 Unsupported Media Type with supported Content-Type information
   - **Security**: Prevents type confusion attacks, ensures proper content handling
   - **Performance**: Fast Content-Type checking with minimal overhead
 
-- **Data protection**: *Multi-layer Data Security*
+- **Data protection**: `Multi-layer Data Security`
   - **Encryption**: TLS 1.3 for transit, AES-256 for sensitive data at rest
   - **PII Handling**: Automatic detection and masking of personally identifiable information
   - **Compliance**: GDPR, CCPA, SOC2 compliance for data protection requirements

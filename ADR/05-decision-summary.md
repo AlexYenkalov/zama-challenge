@@ -23,7 +23,7 @@
 ## Executive Summary
 
 ### Selected Approach
-*RESTful Serverless API with SSE/Webhooks using Cloud-Native Managed Services*
+`RESTful Serverless API with SSE/Webhooks using Cloud-Native Managed Services`
 
 ### Rationale
 Based on our assumptions of no pre-existing infrastructure, no deep infrastructure expertise, budget minimization, and fast-paced environment with low operational overhead, we recommend a cloud-native approach using managed services.
@@ -48,77 +48,77 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
 
 ### API Architecture
 - **RESTful Serverless API**
-  - Kong *(api gateway, rate limiting, abuse protection)*
-  - AWS Lambda *(api endpoints with business logic)*
+  - Kong `(api gateway, rate limiting, abuse protection)`
+  - AWS Lambda `(api endpoints with business logic)`
 - **Notification Mechanisms**
-  - Server-Sent Events *(real-time updates for web clients)*
-  - Webhooks *(event-driven notifications for integrations)*
+  - Server-Sent Events `(real-time updates for web clients)`
+  - Webhooks `(event-driven notifications for integrations)`
 
 ### Authentication & Authorization
 - **Primary**:
   - Auth0
     - OIDC/OAuth2.0
-      - PKCE flow *(single page appliations)*
-      - client_credentials flow *(machine-to-machine)*
+      - PKCE flow `(single page appliations)`
+      - client_credentials flow `(machine-to-machine)`
     - MFA
-      - Passkeys *(primary mfa)*
-      - TOTP *(secondary mfa)*
+      - Passkeys `(primary mfa)`
+      - TOTP `(secondary mfa)`
 - **Upgrade Path**:
-  - BetterAuth (OIDC/OAuth2.0 + Passkeys + TOTP) *(open source)*
+  - BetterAuth (OIDC/OAuth2.0 + Passkeys + TOTP) `(open source)`
     - Requires DBs for auth data persistence
       - Managed PostgreSQL: Supabase
 
 ### Data Storage
 - **Primary**:
-  - Managed MongoDB: MongoDB Atlas *(jobs)*
-  - Managed Redis: Upstash *(cache: quotas, jobs)*
-  - AWS S3 IA/Glacier *(archives: logs, metrics)*
+  - Managed MongoDB: MongoDB Atlas `(jobs)`
+  - Managed Redis: Upstash `(cache: quotas, jobs)`
+  - AWS S3 IA/Glacier `(archives: logs, metrics)`
 - **Upgrade Path**:
-  - Managed PostgreSQL: Supabase *(auth, tenants, users)*
+  - Managed PostgreSQL: Supabase `(auth, tenants, users)`
 
 ### Message Queuing
 - **Primary**:
-  - AWS SNS FIFO + AWS SQS FIFO *(job pipeline events)*
+  - AWS SNS FIFO + AWS SQS FIFO `(job pipeline events)`
 - **Upgrade Path**:
-  - AWS SNS -> AWS EventBridge *(advanced event routing)*
-  - Add Kinesis Data Streams *(high throughput, real-time processing, even-sourcing)*
+  - AWS SNS -> AWS EventBridge `(advanced event routing)`
+  - Add Kinesis Data Streams `(high throughput, real-time processing, even-sourcing)`
 
 ### Compute Infrastructure
 - **Primary**:
-  - AWS Lambda *(short runs e.g. handler for job creation, etc)*
-  - AWS EC2 Spot *(long runs e.g. handlers for job processing, etc)*
+  - AWS Lambda `(short runs e.g. handler for job creation, etc)`
+  - AWS EC2 Spot `(long runs e.g. handlers for job processing, etc)`
 - **Upgrade Path**:
-  - AWS Fargate Spot *(advanced orchestration & minimal operational effort)*
-  - AWS ECS with EC2 Spot *(advanced control & cost optimization)*
+  - AWS Fargate Spot `(advanced orchestration & minimal operational effort)`
+  - AWS ECS with EC2 Spot `(advanced control & cost optimization)`
 
 ### Blockchain Integration
 - **Primary**:
   - Infura
 - **Upgrade Path**:
-  - Add another RPC as backup *(fault tollerance)*
-  - Add Alchemy *(webhook support)*
-  - Add QuickNode *(lower latency)*
+  - Add another RPC as backup `(fault tollerance)`
+  - Add Alchemy `(webhook support)`
+  - Add QuickNode `(lower latency)`
 
 ### Monitoring & Observability
 - **Primary**:
-  - OpenTelemetry *(standardized instrumentation, redaction for sensitive data)*
-  - AWS CloudWatch *(logs, metrics, alerts, dashboards)*
-  - AWS SNS *(notifications, automation)*
-  - AWS Cost Explorer *(dashboards, alerts)*
+  - OpenTelemetry `(standardized instrumentation, redaction for sensitive data)`
+  - AWS CloudWatch `(logs, metrics, alerts, dashboards)`
+  - AWS SNS `(notifications, automation)`
+  - AWS Cost Explorer `(dashboards, alerts)`
 - **Upgrade Path**:
   - Extend with:
-    - AWS S3 IA/Glacier *(data retention)*
-    - AWS X-Ray *(tracing)*
-    - AWS CloudTrail *(security auditing)*
-    - AWS OpenSearch *(advances log analytics)*
-    - AWS Managed Grafana *(advances dashboards)*
+    - AWS S3 IA/Glacier `(data retention)`
+    - AWS X-Ray `(tracing)`
+    - AWS CloudTrail `(security auditing)`
+    - AWS OpenSearch `(advances log analytics)`
+    - AWS Managed Grafana `(advances dashboards)`
   - Migrate to:
-    - DataDog *(less ops, higher cost @ high load)* 
-    - ELK + Jaeger + Prometheus + Grafana *(more ops, lower cost @ high load)* 
+    - DataDog `(less ops, higher cost @ high load)` 
+    - ELK + Jaeger + Prometheus + Grafana `(more ops, lower cost @ high load)` 
 
 ### Billing System
 - **Primary**
-  - Lago *(open source, written in golang, mature docs)*
+  - Lago `(open source, written in golang, mature docs)`
 - **Upgrade Path**:
   - **Build** Own simple service
   - **Buy**: Lago (managed), Alguna, Maxio, 

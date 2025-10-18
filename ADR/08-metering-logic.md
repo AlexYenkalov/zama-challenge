@@ -23,16 +23,16 @@
   - **Implementation vs Value**: Custom events require more work but provide business-specific value
   - **Event Types vs Business Logic**: API call events (technical) vs job lifecycle events (business-focused)
 
-- **Chosen Approach**: *Hybrid*
+- **Chosen Approach**: `Hybrid`
   - **Rationale**: Since we're in the discovery phase, experimenting with different approaches will help us understand what works best and learn from our customers.
 
   - **Event Types**:
-    - *Created Job Count*
-    - *Processed Job Count*
-    - *Confirmed Job Count*
-    - *Job Status Updates Consumed* (manual fetches, Server-Send Events)
-    - *Job Compute Time*
-    - *Job Data Volume*
+    - `Created Job Count`
+    - `Processed Job Count`
+    - `Confirmed Job Count`
+    - `Job Status Updates Consumed` (manual fetches, Server-Send Events)
+    - `Job Compute Time`
+    - `Job Data Volume`
 
 ---
 
@@ -125,7 +125,7 @@
       - **Best For**: Mid-market businesses, developer-focused teams
       - **Cost**: $149-1,499/month (tiered pricing)
 
-- **Chosen Option**: *Trial Lago (open source)*
+- **Chosen Option**: `Trial Lago (open source)`
   - **Rationale**: Lago is perfect for our discovery phase because it's free, open-source, and gives us complete control over billing logic without vendor lock-in, while its modern architecture and developer-friendly APIs let us experiment with different pricing models and learn customer behavior patterns.
 
 ---
@@ -145,13 +145,13 @@
   - **Reliability vs Performance**: Event-driven (reliable) vs stream (high performance)
   - **Business Requirements vs Technical Complexity**: Billing accuracy vs implementation effort
 
-- **Chosen Approach**: *Hybrid Event Processing with Real-time Billing*
+- **Chosen Approach**: `Hybrid Event Processing with Real-time Billing`
   - **Rationale**: Real-time processing for billing events, batch processing for analytics
   - **Business Value**: Immediate billing accuracy + cost-effective analytics processing
   - **Technical Benefits**: Low latency for billing + high throughput for analytics
   - **Architecture**: Event-driven billing + batch analytics + stream processing for high-volume events
 
-- **Event ingestion**: *Multi-source Event Collection with Reliability Guarantees*
+- **Event ingestion**: `Multi-source Event Collection with Reliability Guarantees`
   - **Primary Sources**: 
     - **Job Lifecycle Events**: Creation, completion, confirmation from application
     - **API Gateway Events**: Rate limiting, quota usage from Kong Gateway
@@ -183,13 +183,13 @@
   - **Automation vs Control**: Automated billing (efficient, less control) vs manual billing (more control, inefficient)
   - **Scalability vs Customization**: Standard pricing (scalable, limited customization) vs custom pricing (high customization, limited scalability)
 
-- **Chosen Approach**: *Hybrid Tiered Pricing with Volume Discounts*
+- **Chosen Approach**: `Hybrid Tiered Pricing with Volume Discounts`
   - **Rationale**: Combines predictable tiered pricing with customer-friendly volume discounts
   - **Business Value**: Attracts customers with volume discounts while maintaining revenue predictability
   - **Market Positioning**: Competitive pricing that scales with customer usage
   - **Revenue Model**: Base subscription + usage overage + volume discounts
 
-- **Line item calculation**: *Multi-factor Billing with Business Rules*
+- **Line item calculation**: `Multi-factor Billing with Business Rules`
   - **Base Subscription**: Monthly recurring charge based on tier (Free, Starter, Professional, Business, Enterprise)
   - **Usage Charges**: Overage jobs at tier-specific rates ($0.20-$0.50 per job)
   - **Compute Time**: Resource consumption charges based on actual execution time
@@ -205,7 +205,7 @@
     - **Volume Thresholds**: Discounts apply after 30 days of consistent usage
     - **Enterprise Negotiation**: Custom pricing for strategic accounts
 
-- **Tiered pricing**: *Volume-based Pricing with Market Analysis*
+- **Tiered pricing**: `Volume-based Pricing with Market Analysis`
   - **Free Tier**: $0/month, 10 jobs/month (customer acquisition)
   - **Starter Tier**: $29/month, 100 jobs/month ($0.50 overage) (small businesses)
   - **Professional Tier**: $99/month, 500 jobs/month ($0.30 overage) (medium businesses)
@@ -223,7 +223,7 @@
     - **Customer Acquisition**: Free tier drives adoption and conversion
     - **Revenue Growth**: Volume discounts encourage usage growth
 
-- **Adjustments**: *Automated Credits with Approval Workflow*
+- **Adjustments**: `Automated Credits with Approval Workflow`
   - **Automatic Credits**: 
     - **Failed Jobs**: 100% credit for jobs that fail due to system issues
     - **Overbilling**: Automatic credit for billing errors detected within 24 hours
@@ -240,7 +240,7 @@
     - **Director Approval**: Credits >$1000 require director approval
     - **Audit Trail**: Complete log of all credits and approvals
 
-- **Invoice delivery**: *Multi-channel Delivery with Guarantees*
+- **Invoice delivery**: `Multi-channel Delivery with Guarantees`
   - **Delivery Methods**: 
     - **Email**: PDF invoice sent to customer email address
     - **Portal**: Invoice available in customer dashboard

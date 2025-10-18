@@ -46,7 +46,7 @@
   - **Simplicity vs Flexibility**
   - **Security vs Upgradability**
 
-- **Chosen Approach**: *Trustless (Immutable) Contracts*
+- **Chosen Approach**: `Trustless (Immutable) Contracts`
   - **Rationale**:
     - Security-first with modular design for different functions
     - For a privacy-preserving job confirmation system, trustless contracts provide superior security, user trust, and regulatory compliance. The migration strategy allows for future enhancements while maintaining immutability benefits.
@@ -122,7 +122,7 @@
 - **Options Considered**:
 
   - **Event-Only**
-    - ✅ **Ultra-low gas**: *6,450* gas per confirmation
+    - ✅ **Ultra-low gas**: `6,450` gas per confirmation
     - ✅ **Privacy preserving**: No correlatable data
     - ✅ **Block Timestamp**: Available from block metadata
       - ❌ Can be manipulated by miners
@@ -131,18 +131,18 @@
     - ❌ **Job (integrity) hash verificationn**: Using events only (off-chain)
     - ❌ **Job confirmation date verification**: Using events only (off-chain)
 
-    **Explicit Gas Breakdown** *(6,450)*:
-      - CALL opcode: *2,100* gas
-      - SLOAD (access control check): *2,100* gas
-      - Input validation: *200* gas (jobHash + confirmedAt checks)
-      - LOG3 opcode: *1,750* gas
-      - Function execution: *300* gas
+    **Explicit Gas Breakdown** `(6,450)`:
+      - CALL opcode: `2,100` gas
+      - SLOAD (access control check): `2,100` gas
+      - Input validation: `200` gas (jobHash + confirmedAt checks)
+      - LOG3 opcode: `1,750` gas
+      - Function execution: `300` gas
 
     **Gas Loss on Revert:**
-      - If input validation fails: *2,300* gas lost (~$0.05 at 20 gwei)
-        - CALL opcode: *2,100* gas (transaction initiation)
-        - Input validation: *200* gas (jobHash + confirmedAt checks)
-        - REVERT opcode: *0* gas (revert is free)
+      - If input validation fails: `2,300` gas lost (~$0.05 at 20 gwei)
+        - CALL opcode: `2,100` gas (transaction initiation)
+        - Input validation: `200` gas (jobHash + confirmedAt checks)
+        - REVERT opcode: `0` gas (revert is free)
 
     ```ts
     contract EventOnlyJobConfirmation {
@@ -203,8 +203,8 @@
     ```
 
   - **Event & Mapping**
-    - ❌ **Higher gas**: *26,450* gas per confirmation
-    - ✅ **Privacy preserving**: Job hash built from *job data* and *salt*
+    - ❌ **Higher gas**: `26,450` gas per confirmation
+    - ✅ **Privacy preserving**: Job hash built from `job data` and `salt`
       - ❌ But it still it could be a correlation factor
     - ✅ **Block Timestamp**: Available from block metadata
       - ❌ Can be manipulated by miners
@@ -213,18 +213,18 @@
     - ✅ **Job (integrity) hash verification**: Using events and on-chain state
     - ❌ **Job confirmation date verification**: Using events only (off-chain)
 
-    **Explicit Gas Breakdown** *(26,450)*:
-      - CALL opcode: *2,100* gas
-      - SLOAD (duplicate check): *2,100* gas
-      - SSTORE (confirmation storage): *20,000* gas
-      - LOG3 opcode: *1,750* gas
-      - Function execution: *500* gas
+    **Explicit Gas Breakdown** `(26,450)`:
+      - CALL opcode: `2,100` gas
+      - SLOAD (duplicate check): `2,100` gas
+      - SSTORE (confirmation storage): `20,000` gas
+      - LOG3 opcode: `1,750` gas
+      - Function execution: `500` gas
 
     **Gas Loss on Revert:**
-      - If basic validation fails: *2,300* gas lost (~$0.05 at 20 gwei)
-        - CALL opcode: *2,100* gas (transaction initiation)
-        - Input validation: *200* gas (jobHash + confirmedAt checks)
-        - REVERT opcode: *0* gas (revert is free)
+      - If basic validation fails: `2,300` gas lost (~$0.05 at 20 gwei)
+        - CALL opcode: `2,100` gas (transaction initiation)
+        - Input validation: `200` gas (jobHash + confirmedAt checks)
+        - REVERT opcode: `0` gas (revert is free)
     ```ts
     contract EventAndMappingJobConfirmation {
         // ============================================================================
@@ -325,8 +325,8 @@
     ```
 
   - **Event & Struct**
-    - ❌ **Higher gas**: *30,850* gas per confirmation
-    - ✅ **Privacy preserving**: Job fingerprint is a hash from *job* and *salt*
+    - ❌ **Higher gas**: `30,850` gas per confirmation
+    - ✅ **Privacy preserving**: Job fingerprint is a hash from `job` and `salt`
       - ❌ But it still it could be a correlation factor
     - ✅ **Block Timestamp**: Available from block metadata
       - ❌ Can be manipulated by miners
@@ -335,23 +335,23 @@
     - ✅ **Job (integrity) hash verification**: Using events and on-chain state
     - ✅ **Job confirmation date verification**: Using events and on-chain state
 
-    **Explicit Gas Breakdown** *(30,850)*:
-      - CALL opcode: *2,100* gas
-      - SLOAD (duplicate check): *2,100* gas
-      - SLOAD (FUTURE_TOLERANCE): *2,100* gas
-      - SLOAD (PAST_TOLERANCE): *2,100* gas
-      - SSTORE (confirmation storage): *20,000* gas
-      - LOG3 opcode: *1,750* gas
-      - Function execution: *700* gas
+    **Explicit Gas Breakdown** `(30,850)`:
+      - CALL opcode: `2,100` gas
+      - SLOAD (duplicate check): `2,100` gas
+      - SLOAD (FUTURE_TOLERANCE): `2,100` gas
+      - SLOAD (PAST_TOLERANCE): `2,100` gas
+      - SSTORE (confirmation storage): `20,000` gas
+      - LOG3 opcode: `1,750` gas
+      - Function execution: `700` gas
 
     **Gas Loss on Revert:**
-      - If time validation fails: *6,700* gas lost (~$0.13 at 20 gwei)
-        - CALL opcode: *2,100* gas (transaction initiation)
-        - Input validation: *100* gas (jobHash check)
-        - SLOAD (FUTURE_TOLERANCE): *2,100* gas
-        - SLOAD (PAST_TOLERANCE): *2,100* gas
-        - Time validation logic: *300* gas
-        - REVERT opcode: *0* gas (revert is free)
+      - If time validation fails: `6,700` gas lost (~$0.13 at 20 gwei)
+        - CALL opcode: `2,100` gas (transaction initiation)
+        - Input validation: `100` gas (jobHash check)
+        - SLOAD (FUTURE_TOLERANCE): `2,100` gas
+        - SLOAD (PAST_TOLERANCE): `2,100` gas
+        - Time validation logic: `300` gas
+        - REVERT opcode: `0` gas (revert is free)
     
     ```ts
     contract EventAndStructJobConfirmation {
@@ -500,8 +500,8 @@
     ```
 
   - **Batch Confirmation (Batch)**
-    - ✅ **Gas efficiency**: *23,950* gas per batch
-    - ✅ **Privacy preserving**: Job fingerprint is a hash from *job* and *salt*
+    - ✅ **Gas efficiency**: `23,950` gas per batch
+    - ✅ **Privacy preserving**: Job fingerprint is a hash from `job` and `salt`
       - ❌ But it still it could be a correlation factor
     - ✅ **Block Timestamp**: Available from block metadata
     - ✅ **Job confirmation check**: Using events and on-chain state
@@ -515,25 +515,25 @@
     - Security: No duplicate prevention (off-chain handling required)
     - Trade-off: Cheapest per job, but no on-chain duplicate prevention
 
-    **Explicit Gas Breakdown - Case 01** *(for 10 jobs = 2,180 gas per job)*:
-      - CALL opcode: *2,100* gas (one-time)
-      - Input validation: *200* gas (confirmedAt check, one-time)
-      - Loop processing: *17,500* gas (10 jobs × 1,750 gas per event)
-      - Function execution: *300* gas
-      - **Total for 10 jobs**: *20,100* gas
-      - **Average per job**: *2,010* gas per job
+    **Explicit Gas Breakdown - Case 01** `(for 10 jobs = 2,180 gas per job)`:
+      - CALL opcode: `2,100` gas (one-time)
+      - Input validation: `200` gas (confirmedAt check, one-time)
+      - Loop processing: `17,500` gas (10 jobs × 1,750 gas per event)
+      - Function execution: `300` gas
+      - **Total for 10 jobs**: `20,100` gas
+      - **Average per job**: `2,010` gas per job
 
     **Case 02: Batch Confirmation (confirmBatch)**
     - Security: Batch-level duplicate prevention
     - Trade-off: Higher base cost, but massive savings for large batches
 
-    **Explicit Gas Breakdown - Case 02** *(23,950 gas per batch)*:
-      - CALL opcode: *2,100* gas
-      - Batch hash validation: *100* gas
-      - Batch hash storage: *20,000* gas (SSTORE)
-      - Batch event emission: *1,750* gas (LOG3 opcode)
-      - Function execution: *200* gas
-      - **Total per batch**: *23,950* gas (regardless of batch size)
+    **Explicit Gas Breakdown - Case 02** `(23,950 gas per batch)`:
+      - CALL opcode: `2,100` gas
+      - Batch hash validation: `100` gas
+      - Batch hash storage: `20,000` gas (SSTORE)
+      - Batch event emission: `1,750` gas (LOG3 opcode)
+      - Function execution: `200` gas
+      - **Total per batch**: `23,950` gas (regardless of batch size)
     
     ```ts
     contract BatchJobConfirmation {
@@ -730,19 +730,19 @@
   - **Permissionless vs Access Control**
 
 
-- **Chosen Approach**: *Batch Job Confirmation Strategy with multiple deployments with security features tailored per use-case*
+- **Chosen Approach**: `Batch Job Confirmation Strategy with multiple deployments with security features tailored per use-case`
   - **Primary Strategy**: BatchJobConfirmation (23,950 gas per batch) for high-volume operations
   - **Rationale:**
-    - *Gas Efficiency*:
+    - `Gas Efficiency`:
       - 35% cost savings vs EventOnly with batch processing
       - **$65 (on Polygon)** vs **$3.9M (on Ethereum)** for **1M transactions**
       - Optimal for high-volume applications (100+ jobs per batch)
-    - *Functionality*: 
+    - `Functionality`: 
       - Batch confirmation for high-volume operations
-    - *Scalability*:
+    - `Scalability`:
       - Maximum cost efficiency for high-volume applications
       - **0.1T transactions** at the cost of **$6.5K (on Polygon)**
-    - *Trustless Deployment*:
+    - `Trustless Deployment`:
       - **Contract Simplicity**: Batch-optimized contracts with clear separation of concerns
       - **Contract Security**: No upgrade mechanisms, ensuring contract finality and security
       - **Compliance**: Immutable contracts provide audit trail and regulatory compliance benefits

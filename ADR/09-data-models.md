@@ -166,11 +166,11 @@
     - Pricing Plan Quota Usage Event
 
   - **Relationships**: 
-    - **One-to-Many**: *Tenant* → *User*
-    - **One-to-One**: *Tenant* → *Pricing Plan Subscription*
-    - **One-to-One**: *Pricing Plan Subscription* → *Pricing Plan Declaration*
-    - **One-to-Many**: *Pricing Plan Declaration* → *Pricing Plan Quota*
-    - **One-to-Many**: *Pricing Plan Quota* → *Pricing Plan Quota Usage Event*
+    - **One-to-Many**: `Tenant` → `User`
+    - **One-to-One**: `Tenant` → `Pricing Plan Subscription`
+    - **One-to-One**: `Pricing Plan Subscription` → `Pricing Plan Declaration`
+    - **One-to-Many**: `Pricing Plan Declaration` → `Pricing Plan Quota`
+    - **One-to-Many**: `Pricing Plan Quota` → `Pricing Plan Quota Usage Event`
 
   - **Entity Interfaces**
 
@@ -474,10 +474,10 @@
   - **Availability vs Consistency**
   - **Native Document Support vs JSONB Overhead**
 
-- **Chosen Approach**: *Hybrid Multi-Database Architecture*
+- **Chosen Approach**: `Hybrid Multi-Database Architecture`
   - **Rationale**: Different data types require different database technologies
   - **Business Value**: Optimal performance for each use case
   - **Technical Benefits & Purposes**:
-     - *PostgreSQL* delivers strong consistency to auth data *(not relevant as we start with Auth0, BetterAuth to come later)*
-     - *MongoDb* delivers native doc support for job outputs of various shapes
-     - *Redis* delivers real-time usage quota data to API gateway
+     - `PostgreSQL` delivers strong consistency to auth data `(not relevant as we start with Auth0, BetterAuth to come later)`
+     - `MongoDb` delivers native doc support for job outputs of various shapes
+     - `Redis` delivers real-time usage quota data to API gateway

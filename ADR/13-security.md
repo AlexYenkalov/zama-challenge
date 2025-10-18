@@ -34,7 +34,7 @@
 
 ## 1. Security Governance & Compliance
 
-*Detailed implementation details are available in:*
+`Detailed implementation details are available in:`
 - *[07-platform-policies.md](./07-platform-policies.md#1-authentication) - Security policies and procedures*
 - *[12-reliability.md](./12-reliability.md#3-incident-response-procedures) - Incident response procedures*
 
@@ -75,7 +75,7 @@
 
 ## 3. Data Security & Privacy
 
-*Detailed implementation details are available in:*
+`Detailed implementation details are available in:`
 - *[09-data-models.md](./09-data-models.md#4-database-architecture) - Database architecture and data models*
 - *[07-platform-policies.md](./07-platform-policies.md#2-authorization) - Multi-tenant isolation*
 - *[08-metering-logic.md](./08-metering-logic.md#2-billing-system) - Billing system architecture*
@@ -106,7 +106,7 @@
 
 ## 4. Application Security
 
-*Detailed implementation details are available in:*
+`Detailed implementation details are available in:`
 - *[07-platform-policies.md](./07-platform-policies.md#3-rate-limiting--quotas) - Rate limiting and quotas*
 - *[07-platform-policies.md](./07-platform-policies.md#4-abuse-protection) - Abuse protection and WAF*
 - *[07-platform-policies.md](./07-platform-policies.md#5-content-security) - Content security and validation*
@@ -133,7 +133,7 @@
 
 ## 5. Infrastructure Security
 
-*Detailed implementation details are available in:*
+`Detailed implementation details are available in:`
 - *[12-reliability.md](./12-reliability.md#4-monitoring-and-observability) - Monitoring and observability*
 - *[12-reliability.md](./12-reliability.md#5-alerting) - Alerting and incident response*
 
@@ -153,7 +153,7 @@
 
 ## 6. Smart Contract Security
 
-*Detailed implementation details are available in:*
+`Detailed implementation details are available in:`
 - *[11-on-chain-nterface.md](./11-on-chain-nterface.md#1-contract-upgradability) - Contract upgradability options*
 - *[11-on-chain-nterface.md](./11-on-chain-nterface.md#2-security-considerations) - Security considerations and patterns*
 - *[11-on-chain-nterface.md](./11-on-chain-nterface.md#3-smart-contract-logic) - Smart contract logic and gas optimization*
@@ -174,7 +174,7 @@
 
 ## 7. Security Operations & Monitoring
 
-*Detailed implementation details are available in:*
+`Detailed implementation details are available in:`
 - *[12-reliability.md](./12-reliability.md#5-alerting) - Alerting thresholds and monitoring*
 - *[12-reliability.md](./12-reliability.md#3-incident-response-procedures) - Incident response procedures*
 
