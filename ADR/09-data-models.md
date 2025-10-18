@@ -2,33 +2,10 @@
 
 ## Table of Contents
 
-### 1. Job Entities
-- [Entity Interfaces](#entity-interfaces)
-  - [Problem Detail](#problem-detail)
-  - [Result / Error](#result--error)
-  - [Tx Receipt](#tx-receipt)
-  - [Job Entity](#job-entity)
-  - [Job State Entity](#job-state-entity)
-  - [Job Input Entity](#job-input-entity)
-  - [Job Output Entity](#job-output-entity)
-
-### 2. Tenant, User, and Pricing Plan Entities
-- [Scope](#scope)
-- [Relationships](#relationships)
-- [Entity Interfaces](#entity-interfaces-1)
-  - [Tenant](#tenant)
-  - [Pricing Plan Declaration](#pricing-plan-declaration)
-  - [Pricing Plan Quota Declaration](#pricing-plan-quota-declaration)
-  - [Pricing Plan Subscription](#pricing-plan-subscription)
-  - [Pricing Plan Quota Usage Event](#pricing-plan-quota-usage-event)
-
-### 3. Billing Metric Types
-- [Metric Types](#billing-metric-types)
-
-### 4. Database Architecture
-- [Options Considered](#options-considered)
-- [Trade-offs Analysis](#trade-offs)
-- [Chosen Approach](#chosen-approach)
+- [Job Entities](#1-job-entities)
+- [Tenant, User, and Pricing Plan Entities](#2-tenant-user-and-pricing-plan-entities)
+- [Billing Metric Types](#3-billing-metric-types)
+- [Database Architecture](#4-database-architecture)
 
 ---
 

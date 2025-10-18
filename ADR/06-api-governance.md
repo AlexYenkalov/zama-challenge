@@ -2,101 +2,105 @@
 
 ## Table of Contents
 
-### 1. API Shape & Endpoints
-- [API Endpoints](#api-endpoints)
-  - [System Endpoints](#system)
-  - [Job Management](#jobs)
-  - [User Management](#users)
-  - [Webhook Management](#webhook-management)
-  - [Billing](#billing)
-  - [Analytics](#analytics)
-
-### 2. Versioning Strategy
-- [Options Considered](#options-considered)
-- [Trade-offs Analysis](#trade-offs)
-- [Chosen Approach](#chosen-approach)
-- [Deprecation Notice](#deprecation-notice)
-
-### 3. Error Model
-- [Options Considered](#options-considered-1)
-- [Trade-offs Analysis](#trade-offs-1)
-- [Chosen Approach](#chosen-approach-1)
-- [Error Response Format](#error-response-format)
-- [HTTP Status Code Mapping](#http-status-code-mapping)
-
-### 4. Idempotency Strategy
-- [Options Considered](#options-considered-2)
-- [Trade-offs Analysis](#trade-offs-2)
-- [Chosen Approach](#chosen-approach-2)
-- [Default Cache TTL](#default-cache-ttl)
+- [API Shape & Endpoints](#1-api-shape--endpoints)
+  - [System Endpoints](#system-endpoints)
+  - [Job Management Endpoints](#job-management-endpoints)
+  - [User Management Endpoints](#user-management-endpoints)
+  - [Webhook Management Endpoints](#webhook-management-endpoints)
+  - [Billing Endpoints](#billing-endpoints)
+  - [Analytics Endpoints](#analytics-endpoints)
+- [Versioning Strategy](#2-versioning-strategy)
+- [Error Model](#3-error-model)
+- [Idempotency Strategy](#4-idempotency-strategy)
 
 ---
 
 ## 1. API Shape & Endpoints
 
-- **API endpoints**
+### System Endpoints
 
-  - **System**
-    - GET /system/health *(health check)*
-    - GET /system/ready *(readiness check)*
+| **Method** | **Endpoint** | **Description** |
+|------------|--------------|-----------------|
+| GET | `/system/health` | Health check |
+| GET | `/system/ready` | Readiness check |
 
-  - **Jobs**
-    - GET /jobs
-    - GET /jobs/:id
-    - GET /jobs/:id/status *(dedicated endpoint for "status", prevents over-fetching)*
-    - GET /jobs/:id/outputs *(dedicated endpoint for "outputs", prevents over-fetching, paginated)*
-    - GET /jobs/:id/stream *(separate endpoint for Server-Sent Events)*
-    - POST /jobs *(single endpoint, handles either one or many jobs)*
-    - PUT /jobs/:id/status *(dedicated endpoint, simplifies extension of status types)*
-    - DELETE /jobs/:id
-    - POST /jobs/reconcile *(internal endpoint, automates retying DLQ job(s))*
+### Job Management Endpoints
 
-  - **Users**
-    - GET /users
-    - GET /users/:id
-    - POST /users/invite
-    - PUT /users/:id
-    - DELETE /users/:id
+| **Method** | **Endpoint** | **Description** |
+|------------|--------------|-----------------|
+| GET | `/jobs` | List jobs |
+| GET | `/jobs/:id` | Get job details |
+| GET | `/jobs/:id/status` | Get job status (dedicated endpoint, prevents over-fetching) |
+| GET | `/jobs/:id/outputs` | Get job outputs (dedicated endpoint, prevents over-fetching, paginated) |
+| GET | `/jobs/:id/stream` | Server-Sent Events stream |
+| POST | `/jobs` | Create job(s) (single endpoint, handles either one or many jobs) |
+| PUT | `/jobs/:id/status` | Update job status (dedicated endpoint, simplifies extension of status types) |
+| DELETE | `/jobs/:id` | Delete job |
+| POST | `/jobs/reconcile` | Reconcile jobs (internal endpoint, automates retrying jobs with issues) |
 
-  - **Webhook Management**
-    - GET /webhooks
-    - GET /webhooks/:id
-    - POST /webhooks
-    - PUT /webhooks/:id
-    - DELETE /webhooks/:id
+### User Management Endpoints
 
-  - **Billing**
-    - GET /billing/usage *(usage data i.e. quota usage)*
-    - GET /billing/invoices *(issued invoices)*
+| **Method** | **Endpoint** | **Description** |
+|------------|--------------|-----------------|
+| GET | `/users` | List users |
+| GET | `/users/:id` | Get user details |
+| POST | `/users/invite` | Invite user |
+| PUT | `/users/:id` | Update user |
+| DELETE | `/users/:id` | Delete user |
 
-  - **Analytics** *(business metrics and reporting)*
-    - GET /analytics/jobs
+### Webhook Management Endpoints
+
+| **Method** | **Endpoint** | **Description** |
+|------------|--------------|-----------------|
+| GET | `/webhooks` | List webhooks |
+| GET | `/webhooks/:id` | Get webhook details |
+| POST | `/webhooks` | Create webhook |
+| PUT | `/webhooks/:id` | Update webhook |
+| DELETE | `/webhooks/:id` | Delete webhook |
+
+### Billing Endpoints
+
+| **Method** | **Endpoint** | **Description** |
+|------------|--------------|-----------------|
+| GET | `/billing/usage` | Get usage data (quota usage) |
+| GET | `/billing/invoices` | Get issued invoices |
+
+### Analytics Endpoints
+
+| **Method** | **Endpoint** | **Description** |
+|------------|--------------|-----------------|
+| GET | `/analytics/jobs` | Get job analytics (business metrics and reporting) |
 
 ---
 
 ## 2. Versioning Strategy
 
 - **Options Considered**:
-  - **Path-Based Versioning**:
-    - ✅ CDN/cache optimization
-    - ✅ Debugging excellence
-    - ✅ Client simplicity
-    - ❌ Maintenance overhead
-      - ✅ But provides isolation
-    - ❌ Client must update URLs
-      - ✅ But this is manageable with SDKs
-  - **Header-Based Versioning** / **Media Type Versioning**
-    - ✅ Clean URLs, HTTP content negotiation
-    - ❌ CDN/cache complexity
-    - ❌ Harder to test in browser
-  - **Query Parameter Versioning**
-    - ✅ No routing changes needed
-    - ✅ Zero-chnage migration to a new version 
-      - ❌ But this could suddenly break production
-    - ❌ CDN/cache complexity
-    - ❌ Mixing concerns in URL
 
-- **Trade-offs**: [CDN/cache friendly vs clean URLs vs simplicity vs adoption]
+<table>
+<tr>
+<th valign="top">Option</th>
+<th valign="top">Pros</th>
+<th valign="top">Cons</th>
+</tr>
+<tr>
+<td valign="top">Path-Based Versioning</td>
+<td valign="top">• CDN/cache optimization<br>• Debugging excellence<br>• Client simplicity<br>• Provides isolation</td>
+<td valign="top">• Maintenance overhead<br>• Client must update URLs (but manageable with SDKs)</td>
+</tr>
+<tr>
+<td valign="top">Header-Based Versioning / Media Type Versioning</td>
+<td valign="top">• Clean URLs<br>• HTTP content negotiation</td>
+<td valign="top">• CDN/cache complexity<br>• Harder to test in browser</td>
+</tr>
+<tr>
+<td valign="top">Query Parameter Versioning</td>
+<td valign="top">• No routing changes needed<br>• Zero-change migration to a new version</td>
+<td valign="top">• Could suddenly break production<br>• CDN/cache complexity<br>• Mixing concerns in URL</td>
+</tr>
+</table>
+
+- **Trade-offs**:
   - **CDN/cache Complexity vs Maintenance Overhead**
   - **HTTP content negotiation vs Debugging Excellence**
   - **HTTP content negotiation vs Client Simplicity**
@@ -111,29 +115,32 @@
 ---
 
 ## 3. Error Model
-- **Options Considered**: [RFC7807 vs custom error format vs HTTP status only]
-  - **RFC7807 Problem+JSON**
-    - ✅ RFC7807 is the official standard 
-    - ✅ Consistent error format across all endpoints
-    - ✅ Can add custom fields and types
-    - ✅ Clear error messages for developers
-    - ✅ Self-documenting error types
-    - ❌ Developers need to understand RFC7807
-    - ❌ Larger response payload
-  - **Custom Error Format**
-    - ✅ Can customize format as needed
-    - ✅ Smaller response payload
-    - ✅ Fast to implement
-    - ❌ No detailed error information
-    - ❌ Hard to troubleshoot issues: no error details
-  - **HTTP Status Only**
-    - ✅ Very simple to implement
-    - ✅ Minimal response payload
-    - ✅ Quick to implement
-    - ❌ No detailed error information
-    - ❌ Hard to troubleshoot issues: no error details
+- **Options Considered**:
 
-- **Trade-offs**: [Standardization vs simplicity vs client experience]
+<table>
+<tr>
+<th valign="top">Option</th>
+<th valign="top">Pros</th>
+<th valign="top">Cons</th>
+</tr>
+<tr>
+<td valign="top">RFC7807 Problem+JSON</td>
+<td valign="top">• Official standard<br>• Consistent error format<br>• Custom fields and types<br>• Clear error messages<br>• Self-documenting error types</td>
+<td valign="top">• Developers need to understand RFC7807<br>• Larger response payload</td>
+</tr>
+<tr>
+<td valign="top">Custom Error Format</td>
+<td valign="top">• Customizable format<br>• Smaller response payload<br>• Fast to implement</td>
+<td valign="top">• No detailed error information<br>• Hard to troubleshoot issues</td>
+</tr>
+<tr>
+<td valign="top">HTTP Status Only</td>
+<td valign="top">• Very simple to implement<br>• Minimal response payload<br>• Quick to implement</td>
+<td valign="top">• No detailed error information<br>• Hard to troubleshoot issues</td>
+</tr>
+</table>
+
+- **Trade-offs**:
   - **Client Simplicity vs Developer Simplicity**
 
 - **Chosen Approach**: *Client Simplicity*
@@ -194,24 +201,31 @@
 ## 4. Idempotency Strategy
 
 - **Options Considered**:
-  - **Client-controlled with UUID**
-    - ✅ Client control over retry behavior
-    - ❌ Key collision risk
-      - ✅ But can be prevented by using UUID v4 as exmaple
-    - ❌ Client must generate key
-  - **Request Content Hash-based** & **Client-controlled** *(similar to HMAC API Key)*
-    - ✅ Content-based deduplication
-    - ✅ Collision-resistant
-    - ❌ Client must generate key
-    - ❌ Performance overhead
-  - **Request Content Hash-based** & **Server-managed**
-    - ✅ Cient simplicity *(as server manages deduplication)*
-    - ✅ Content-based deduplication
-    - ✅ Collision-resistant
-    - ❌ Server must generate key based of a request content
-    - ❌ Some dups can go through due to race conditions
 
-- **Trade-offs**: [Client control vs server simplicity vs safety vs flexibility]
+<table>
+<tr>
+<th valign="top">Option</th>
+<th valign="top">Pros</th>
+<th valign="top">Cons</th>
+</tr>
+<tr>
+<td valign="top">Client-controlled with UUID</td>
+<td valign="top">• Client control over retry behavior<br>• Can prevent collision with UUID v4</td>
+<td valign="top">• Key collision risk<br>• Client must generate key</td>
+</tr>
+<tr>
+<td valign="top">Request Content Hash-based & Client-controlled</td>
+<td valign="top">• Content-based deduplication<br>• Collision-resistant</td>
+<td valign="top">• Client must generate key<br>• Performance overhead</td>
+</tr>
+<tr>
+<td valign="top">Request Content Hash-based & Server-managed</td>
+<td valign="top">• Client simplicity<br>• Content-based deduplication<br>• Collision-resistant</td>
+<td valign="top">• Server must generate key based on request content<br>• Some dups can go through due to race conditions</td>
+</tr>
+</table>
+
+- **Trade-offs**:
   - **Client Simplicity vs Client Control**
   - **Client Simplicity vs Deduplication Guarantees**
 

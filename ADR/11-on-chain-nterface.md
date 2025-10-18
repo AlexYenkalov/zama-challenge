@@ -2,26 +2,9 @@
 
 ## Table of Contents
 
-### 1. Contract Upgradability
-- [Trustless vs Upgradeable Analysis](#trustless-vs-upgradeable-analysis)
-- [Migration Strategy Benefits](#migration-strategy-benefits)
-- [Recommended Approach](#recommended-approach)
-
-### 2. Security Considerations
-- [Access Control Patterns](#access-control-patterns)
-- [Security Trade-offs](#security-trade-offs)
-- [Security Benefits](#security-benefits)
-
-### 3. Smart Contract Logic
-- [Implementation Options](#implementation-options)
-  - [Event-Only Implementation](#event-only-implementation)
-  - [Event & Mapping Implementation](#event--mapping-implementation)
-  - [Event & Struct Implementation](#event--struct-implementation)
-  - [Batch Confirmation Implementation](#batch-confirmation-implementation)
-- [Security Considerations](#security-considerations-1)
-- [Multi-Chain Cost Analysis](#multi-chain-cost-analysis)
-- [Trade-offs Analysis](#trade-offs-analysis)
-- [Chosen Approach](#chosen-approach)
+- [Contract Upgradability](#1-contract-upgradability)
+- [Security Considerations](#2-security-considerations)
+- [Smart Contract Logic](#3-smart-contract-logic)
 
 ---
 

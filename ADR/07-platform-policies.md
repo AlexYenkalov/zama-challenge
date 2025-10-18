@@ -2,78 +2,50 @@
 
 ## Table of Contents
 
-### 1. Authentication
-- [Options Considered](#options-considered)
-- [Trade-offs Analysis](#trade-offs)
-- [Chosen Approach](#chosen-approach)
-- [Auth Method](#auth-method)
-- [Token Format](#token-format)
-- [Token Lifecycle](#token-lifecycle)
-- [Multi-factor Authentication](#multi-factor-authentication)
-
-### 2. Authorization
-- [Options Considered](#options-considered-1)
-- [Trade-offs Analysis](#trade-offs-1)
-- [Chosen Approach](#chosen-approach-1)
-- [Access Control](#access-control)
-- [Resource Isolation](#resource-isolation)
-- [Permission Model](#permission-model)
-
-### 3. Rate Limiting & Quotas
-- [Options Considered](#options-considered-2)
-- [Trade-offs Analysis](#trade-offs-2)
-- [Chosen Approach](#chosen-approach-2)
-- [Multi-Layer Traffic Control](#multi-layer-traffic-control)
-- [Rate Limit Tiers](#rate-limit-tiers)
-- [Throttling Behavior](#throttling-behavior)
-- [Quota Enforcement](#quota-enforcement)
-- [Quota Monitoring](#quota-monitoring)
-
-### 4. Abuse Protection
-- [Options Considered](#options-considered-3)
-- [Trade-offs Analysis](#trade-offs-3)
-- [Chosen Approach](#chosen-approach-3)
-- [WAF Rules](#waf-rules)
-- [DDoS Protection](#ddos-protection)
-- [Bot Detection](#bot-detection)
-- [Threat Intelligence](#threat-intelligence)
-
-### 5. Content Security
-- [Options Considered](#options-considered-4)
-- [Trade-offs Analysis](#trade-offs-4)
-- [Chosen Approach](#chosen-approach-4)
-- [Input Validation](#input-validation)
-- [Size Limits](#size-limits)
-- [Content Filtering](#content-filtering)
-- [Data Protection](#data-protection)
+- [Authentication](#1-authentication)
+- [Authorization](#2-authorization)
+- [Rate Limiting & Quotas](#3-rate-limiting--quotas)
+- [Abuse Protection](#4-abuse-protection)
+- [Content Security](#5-content-security)
 
 ---
 
 ## 1. Authentication
 
-- **Options Considered**: 
-  - **Self-hosted OIDC/OAuth 2.0 with Better-Auth**:
-    - ✅ Simple setup
-    - ✅ Free
-    - ✅ High security
-  - **Self-hosted OIDC/OAuth 2.0 Services**
-    - ✅ Medium setup complexity
-    - ✅ High security
-    - ✅ Comprehensive audit logs
-    - ❌ Requires server maintenance
-  - **Managed OIDC/OAuth 2.0 Services**:
-    - ✅ Simple setup
-    - ✅ High security
-    - ✅ Enterprise-grade compliance
-    - ❌ Medium cost per user
-  - **HMAC API Keys**:
-    - ✅ Simple implementation
-    - ✅ High security with replay protection
-    - ❌ No user context and limited access management
-  - **Better-Auth API Keys**:
-    - ✅ Simple integration
-    - ✅ Medium security
-    - ❌ no HMAC/replay protection
+- **Options Considered**:
+
+<table>
+<tr>
+<th valign="top">Option</th>
+<th valign="top">Pros</th>
+<th valign="top">Cons</th>
+</tr>
+<tr>
+<td valign="top">Self-hosted OIDC/OAuth 2.0 with Better-Auth</td>
+<td valign="top">• Simple setup<br/>• Free<br/>• High security</td>
+<td valign="top">None significant</td>
+</tr>
+<tr>
+<td valign="top">Self-hosted OIDC/OAuth 2.0 Services</td>
+<td valign="top">• Medium setup complexity<br/>• High security<br/>• Comprehensive audit logs</td>
+<td valign="top">• Requires server maintenance</td>
+</tr>
+<tr>
+<td valign="top">Managed OIDC/OAuth 2.0 Services</td>
+<td valign="top">• Simple setup<br/>• High security<br/>• Enterprise-grade compliance</td>
+<td valign="top">• Medium cost per user</td>
+</tr>
+<tr>
+<td valign="top">HMAC API Keys</td>
+<td valign="top">• Simple implementation<br/>• High security with replay protection</td>
+<td valign="top">• No user context and limited access management</td>
+</tr>
+<tr>
+<td valign="top">Better-Auth API Keys</td>
+<td valign="top">• Simple integration<br/>• Medium security</td>
+<td valign="top">• No HMAC/replay protection</td>
+</tr>
+</table>
 
 - **Trade-offs**: 
   - **Security & Simplicity (win-win)**: Better-Auth provides good balance with OIDC/OAuth 2.0 standards while maintaining simplicity
@@ -115,11 +87,45 @@
 **Authorization model with access control analysis**
 
 - **Options Considered**:
-  - **RBAC (Role-Based Access Control)**: Users assigned to roles, roles have permissions, simple to understand and implement
-  - **ABAC (Attribute-Based Access Control)**: Context-aware decisions based on user attributes, resource attributes, environment conditions
-  - **OAuth 2.0 Scopes**: Fine-grained permissions embedded in access tokens, standard OAuth approach
-  - **Permission-based**: Direct user-to-permission mapping, maximum flexibility but complex management
-  - **ACLs (Access Control Lists)**: Resource-centric permissions, good for simple scenarios but doesn't scale well
+
+<table>
+<tr>
+<th valign="top">Option</th>
+<th valign="top">Description</th>
+<th valign="top">Pros</th>
+<th valign="top">Cons</th>
+</tr>
+<tr>
+<td valign="top">RBAC (Role-Based Access Control)</td>
+<td valign="top">Users assigned to roles, roles have permissions</td>
+<td valign="top">• Simple to understand and implement<br/>• Easy role management<br/>• Clear permission hierarchy</td>
+<td valign="top">• Less flexible than ABAC<br/>• Role explosion potential</td>
+</tr>
+<tr>
+<td valign="top">ABAC (Attribute-Based Access Control)</td>
+<td valign="top">Context-aware decisions based on user attributes, resource attributes, environment conditions</td>
+<td valign="top">• Highly flexible<br/>• Context-aware decisions<br/>• Fine-grained control</td>
+<td valign="top">• Complex implementation<br/>• Performance overhead<br/>• Difficult to manage</td>
+</tr>
+<tr>
+<td valign="top">OAuth 2.0 Scopes</td>
+<td valign="top">Fine-grained permissions embedded in access tokens</td>
+<td valign="top">• Standard OAuth approach<br/>• Token-based authorization<br/>• Industry standard</td>
+<td valign="top">• Token size limitations<br/>• Limited context awareness</td>
+</tr>
+<tr>
+<td valign="top">Permission-based</td>
+<td valign="top">Direct user-to-permission mapping</td>
+<td valign="top">• Maximum flexibility<br/>• Direct control<br/>• No role constraints</td>
+<td valign="top">• Complex management<br/>• Permission explosion<br/>• Difficult to audit</td>
+</tr>
+<tr>
+<td valign="top">ACLs (Access Control Lists)</td>
+<td valign="top">Resource-centric permissions</td>
+<td valign="top">• Good for simple scenarios<br/>• Resource-focused<br/>• Easy to understand</td>
+<td valign="top">• Doesn't scale well<br/>• Limited flexibility<br/>• Maintenance overhead</td>
+</tr>
+</table>
 
 - **Trade-offs**:
   - **Flexibility vs Simplicity**: RBAC provides good balance - flexible enough for most use cases while remaining simple to understand and implement
@@ -202,29 +208,106 @@
 
 ## 3. Rate Limiting & Quotas
 
-- **Options Considered**: 
-  - **Self-hosted API Gateway**:
-    - **Kong Gateway**: $0-2000/month, <3ms latency, advanced rate limiting, API gateway, strong community
-    - **NGINX Plus**: $2.5K/year, <2ms latency, high performance, full control, maintenance overhead
-    - **Traefik**: Free, <5ms latency, cloud-native, Docker/Kubernetes, community support
-  - **Kong's Real Competitors**:
-    - **NGINX Plus**: Kong's main competitor - higher performance but more complex setup
-    - **Traefik**: Kong's lightweight competitor - simpler but fewer features
-    - **AWS API Gateway**: Not a real competitor due to 50-100ms latency (unacceptable)
-    - **Azure API Management**: Not a real competitor due to 40-80ms latency (unacceptable)
-    - **Google Cloud Endpoints**: Not a real competitor due to 30-60ms latency (unacceptable)
-  - **Managed Cloud Services**:
-    - **AWS API Gateway**: $3.50 per million requests, 50-100ms latency, AWS integration, managed service
-    - **Azure API Management**: $0.035/hour + $0.00035/request, 40-80ms latency, Azure integration, enterprise features
-    - **Google Cloud Endpoints**: $3.00 per million requests, 30-60ms latency, Google Cloud integration, ML-based protection
-  - **Service Mesh**:
-    - **Istio Service Mesh**: Free, 5-15ms latency, Kubernetes-native, complex setup, enterprise-grade
-  - **Rate Limiting Algorithms**:
-    - **Token Bucket**: Allows sustained rates with burst capacity, smooth traffic handling
-    - **Leaky Bucket**: Smooths traffic spikes, prevents micro-bursts, protects downstream services
-    - **Sliding Window**: Accurate rate limiting but higher memory usage and complexity
-    - **Fixed Window**: Simple implementation but allows burst at window boundaries
-    - **Per-IP Fallback**: Infrastructure protection before authentication
+- **Options Considered**:
+
+<table>
+<tr>
+<th valign="top">Category</th>
+<th valign="top">Option</th>
+<th valign="top">Cost</th>
+<th valign="top">Latency</th>
+<th valign="top">Pros</th>
+<th valign="top">Cons</th>
+</tr>
+<tr>
+<td valign="top" rowspan="3">Self-hosted API Gateway</td>
+<td valign="top">Kong Gateway</td>
+<td valign="top">$0-2000/month</td>
+<td valign="top"><3ms</td>
+<td valign="top">• Advanced rate limiting<br/>• API gateway<br/>• Strong community</td>
+<td valign="top">• Maintenance required</td>
+</tr>
+<tr>
+<td valign="top">NGINX Plus</td>
+<td valign="top">$2.5K/year</td>
+<td valign="top"><2ms</td>
+<td valign="top">• High performance<br/>• Full control</td>
+<td valign="top">• Maintenance overhead<br/>• More complex setup</td>
+</tr>
+<tr>
+<td valign="top">Traefik</td>
+<td valign="top">Free</td>
+<td valign="top"><5ms</td>
+<td valign="top">• Cloud-native<br/>• Docker/Kubernetes<br/>• Community support</td>
+<td valign="top">• Fewer features<br/>• Simpler but limited</td>
+</tr>
+<tr>
+<td valign="top" rowspan="3">Managed Cloud Services</td>
+<td valign="top">AWS API Gateway</td>
+<td valign="top">$3.50 per million requests</td>
+<td valign="top">50-100ms</td>
+<td valign="top">• AWS integration<br/>• Managed service</td>
+<td valign="top">• High latency (unacceptable)<br/>• Vendor lock-in</td>
+</tr>
+<tr>
+<td valign="top">Azure API Management</td>
+<td valign="top">$0.035/hour + $0.00035/request</td>
+<td valign="top">40-80ms</td>
+<td valign="top">• Azure integration<br/>• Enterprise features</td>
+<td valign="top">• High latency (unacceptable)<br/>• Vendor lock-in</td>
+</tr>
+<tr>
+<td valign="top">Google Cloud Endpoints</td>
+<td valign="top">$3.00 per million requests</td>
+<td valign="top">30-60ms</td>
+<td valign="top">• Google Cloud integration<br/>• ML-based protection</td>
+<td valign="top">• High latency (unacceptable)<br/>• Vendor lock-in</td>
+</tr>
+<tr>
+<td valign="top">Service Mesh</td>
+<td valign="top">Istio Service Mesh</td>
+<td valign="top">Free</td>
+<td valign="top">5-15ms</td>
+<td valign="top">• Kubernetes-native<br/>• Enterprise-grade</td>
+<td valign="top">• Complex setup<br/>• Kubernetes dependency</td>
+</tr>
+<tr>
+<td valign="top" rowspan="5">Rate Limiting Algorithms</td>
+<td valign="top">Token Bucket</td>
+<td valign="top">-</td>
+<td valign="top">-</td>
+<td valign="top">• Allows sustained rates with burst capacity<br/>• Smooth traffic handling</td>
+<td valign="top">• Memory usage for tokens</td>
+</tr>
+<tr>
+<td valign="top">Leaky Bucket</td>
+<td valign="top">-</td>
+<td valign="top">-</td>
+<td valign="top">• Smooths traffic spikes<br/>• Prevents micro-bursts<br/>• Protects downstream services</td>
+<td valign="top">• Fixed rate output</td>
+</tr>
+<tr>
+<td valign="top">Sliding Window</td>
+<td valign="top">-</td>
+<td valign="top">-</td>
+<td valign="top">• Accurate rate limiting</td>
+<td valign="top">• Higher memory usage and complexity</td>
+</tr>
+<tr>
+<td valign="top">Fixed Window</td>
+<td valign="top">-</td>
+<td valign="top">-</td>
+<td valign="top">• Simple implementation</td>
+<td valign="top">• Allows burst at window boundaries</td>
+</tr>
+<tr>
+<td valign="top">Per-IP Fallback</td>
+<td valign="top">-</td>
+<td valign="top">-</td>
+<td valign="top">• Infrastructure protection before authentication</td>
+<td valign="top">• Limited user context</td>
+</tr>
+</table>
 
 - **Trade-offs**: 
   - **Algorithm Trade-offs**:
@@ -306,18 +389,77 @@
 
 ## 4. Abuse Protection
 
-- **Options Considered**: 
-  - **Managed Cloud WAF**:
-    - **Cloudflare WAF**: $20/month, <20ms latency, advanced bot protection, real-time threat intelligence, 200+ data centers, most popular SMB choice
-    - **AWS WAF**: $1-5 per million requests, 50-100ms latency, extensive custom rules, AWS integration, industry standard for AWS workloads
-    - **Google Cloud Armor**: $1-3 per million requests, 30-60ms latency, Google Cloud integration, ML-based protection, growing market share
-    - **Azure Application Gateway WAF**: $0.025/hour + $0.008/GB, 40-80ms latency, Azure integration, OWASP protection, Microsoft ecosystem standard
-  - **Enterprise Managed WAF**:
-    - **Akamai WAF**: $5K-15K/month, 20-50ms latency, enterprise features, 300+ data centers, global CDN, enterprise market leader
-    - **Imperva WAF**: $8K-20K/month, 30-80ms latency, compliance-focused, advanced threat intelligence, enterprise-grade, compliance leader
-  - **Self-hosted WAF**:
-    - **NGINX Plus**: $2.5K/year, <2ms latency, full control, custom rules, high performance, maintenance overhead
-    - **F5 BIG-IP**: $15K-50K/year, 10-30ms latency, on-premises/cloud, advanced traffic management, enterprise-grade
+- **Options Considered**:
+
+<table>
+<tr>
+<th valign="top">Category</th>
+<th valign="top">Option</th>
+<th valign="top">Cost</th>
+<th valign="top">Latency</th>
+<th valign="top">Pros</th>
+<th valign="top">Cons</th>
+</tr>
+<tr>
+<td valign="top" rowspan="4">Managed Cloud WAF</td>
+<td valign="top">Cloudflare WAF</td>
+<td valign="top">$20/month</td>
+<td valign="top"><20ms</td>
+<td valign="top">• Advanced bot protection<br/>• Real-time threat intelligence<br/>• 200+ data centers<br/>• Most popular SMB choice</td>
+<td valign="top">• Vendor lock-in</td>
+</tr>
+<tr>
+<td valign="top">AWS WAF</td>
+<td valign="top">$1-5 per million requests</td>
+<td valign="top">50-100ms</td>
+<td valign="top">• Extensive custom rules<br/>• AWS integration<br/>• Industry standard for AWS workloads</td>
+<td valign="top">• High latency<br/>• AWS vendor lock-in</td>
+</tr>
+<tr>
+<td valign="top">Google Cloud Armor</td>
+<td valign="top">$1-3 per million requests</td>
+<td valign="top">30-60ms</td>
+<td valign="top">• Google Cloud integration<br/>• ML-based protection<br/>• Growing market share</td>
+<td valign="top">• High latency<br/>• Google vendor lock-in</td>
+</tr>
+<tr>
+<td valign="top">Azure Application Gateway WAF</td>
+<td valign="top">$0.025/hour + $0.008/GB</td>
+<td valign="top">40-80ms</td>
+<td valign="top">• Azure integration<br/>• OWASP protection<br/>• Microsoft ecosystem standard</td>
+<td valign="top">• High latency<br/>• Azure vendor lock-in</td>
+</tr>
+<tr>
+<td valign="top" rowspan="2">Enterprise Managed WAF</td>
+<td valign="top">Akamai WAF</td>
+<td valign="top">$5K-15K/month</td>
+<td valign="top">20-50ms</td>
+<td valign="top">• Enterprise features<br/>• 300+ data centers<br/>• Global CDN<br/>• Enterprise market leader</td>
+<td valign="top">• High cost<br/>• Enterprise complexity</td>
+</tr>
+<tr>
+<td valign="top">Imperva WAF</td>
+<td valign="top">$8K-20K/month</td>
+<td valign="top">30-80ms</td>
+<td valign="top">• Compliance-focused<br/>• Advanced threat intelligence<br/>• Enterprise-grade<br/>• Compliance leader</td>
+<td valign="top">• Very high cost<br/>• Enterprise complexity</td>
+</tr>
+<tr>
+<td valign="top" rowspan="2">Self-hosted WAF</td>
+<td valign="top">NGINX Plus</td>
+<td valign="top">$2.5K/year</td>
+<td valign="top"><2ms</td>
+<td valign="top">• Full control<br/>• Custom rules<br/>• High performance</td>
+<td valign="top">• Maintenance overhead<br/>• Setup complexity</td>
+</tr>
+<tr>
+<td valign="top">F5 BIG-IP</td>
+<td valign="top">$15K-50K/year</td>
+<td valign="top">10-30ms</td>
+<td valign="top">• On-premises/cloud<br/>• Advanced traffic management<br/>• Enterprise-grade</td>
+<td valign="top">• High cost<br/>• Complex setup<br/>• Maintenance overhead</td>
+</tr>
+</table>
 
 - **Trade-offs**: 
   - **Managed vs Self-hosted**: Managed WAF (zero maintenance, vendor lock-in) vs Self-hosted (full control, maintenance overhead)
@@ -377,13 +519,52 @@
 
 ## 5. Content Security
 
-- **Options Considered**: 
-  - **JSON Schema Validation**: Comprehensive validation, performance overhead, security against injection
-  - **Input Sanitization**: Automatic cleaning, false positives, performance impact
-  - **Content Filtering**: Malicious content detection, accuracy requirements, false positive handling
-  - **Data Protection**: Encryption at rest/transit, PII handling, compliance requirements
-  - **Size Limits**: Request body limits, file upload limits, DoS protection
-  - **Content-Type Enforcement**: Strict media type validation, security against type confusion
+- **Options Considered**:
+
+<table>
+<tr>
+<th valign="top">Option</th>
+<th valign="top">Description</th>
+<th valign="top">Pros</th>
+<th valign="top">Cons</th>
+</tr>
+<tr>
+<td valign="top">JSON Schema Validation</td>
+<td valign="top">Comprehensive validation</td>
+<td valign="top">• Security against injection<br/>• Comprehensive validation</td>
+<td valign="top">• Performance overhead</td>
+</tr>
+<tr>
+<td valign="top">Input Sanitization</td>
+<td valign="top">Automatic cleaning</td>
+<td valign="top">• Automatic cleaning<br/>• Prevents malicious input</td>
+<td valign="top">• False positives<br/>• Performance impact</td>
+</tr>
+<tr>
+<td valign="top">Content Filtering</td>
+<td valign="top">Malicious content detection</td>
+<td valign="top">• Malicious content detection<br/>• Security enhancement</td>
+<td valign="top">• Accuracy requirements<br/>• False positive handling</td>
+</tr>
+<tr>
+<td valign="top">Data Protection</td>
+<td valign="top">Encryption at rest/transit, PII handling</td>
+<td valign="top">• Encryption at rest/transit<br/>• PII handling<br/>• Compliance requirements</td>
+<td valign="top">• Performance overhead<br/>• Implementation complexity</td>
+</tr>
+<tr>
+<td valign="top">Size Limits</td>
+<td valign="top">Request body limits, file upload limits</td>
+<td valign="top">• DoS protection<br/>• Resource management</td>
+<td valign="top">• May limit legitimate usage</td>
+</tr>
+<tr>
+<td valign="top">Content-Type Enforcement</td>
+<td valign="top">Strict media type validation</td>
+<td valign="top">• Security against type confusion<br/>• Strict validation</td>
+<td valign="top">• May block legitimate requests</td>
+</tr>
+</table>
 
 - **Trade-offs**: 
   - **Security vs Performance**: Comprehensive validation provides security but adds latency overhead

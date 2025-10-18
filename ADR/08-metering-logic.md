@@ -2,32 +2,10 @@
 
 ## Table of Contents
 
-### 1. Usage Events
-- [Options Considered](#options-considered)
-- [Trade-offs Analysis](#trade-offs)
-- [Chosen Approach](#chosen-approach)
-- [Event Types](#event-types)
-
-### 2. Billing System
-- [Options Considered](#options-considered-1)
-- [Trade-offs Analysis](#trade-offs-1)
-- [Vendor Comparison Analysis](#vendor-comparison-analysis)
-- [Chosen Option](#chosen-option)
-
-### 3. Event Processing
-- [Options Considered](#options-considered-2)
-- [Trade-offs Analysis](#trade-offs-2)
-- [Chosen Approach](#chosen-approach-1)
-- [Event Ingestion](#event-ingestion)
-
-### 4. Invoice Mapping
-- [Options Considered](#options-considered-3)
-- [Trade-offs Analysis](#trade-offs-3)
-- [Chosen Approach](#chosen-approach-2)
-- [Line Item Calculation](#line-item-calculation)
-- [Tiered Pricing](#tiered-pricing)
-- [Adjustments](#adjustments)
-- [Invoice Delivery](#invoice-delivery)
+- [Usage Events](#1-usage-events)
+- [Billing System](#2-billing-system)
+- [Event Processing](#3-event-processing)
+- [Invoice Mapping](#4-invoice-mapping)
 
 ---
 

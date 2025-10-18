@@ -59,8 +59,8 @@ This is a design-led exercise to demonstrate architectural decision-making skill
 
 **Legend**:
   - *(R)* = Explicitly Required
-  - *(S)* = Suggested for Completeness
   - *(I)* = Implied by Context
+  - *(S)* = Suggested for Completeness
 
 ## Functional Requirements
 

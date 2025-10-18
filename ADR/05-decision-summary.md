@@ -23,7 +23,7 @@
 ## Executive Summary
 
 ### Selected Approach
-**Selected Approach**: *RESTful Serverless API with SSE/Webhooks using Cloud-Native Managed Services*
+*RESTful Serverless API with SSE/Webhooks using Cloud-Native Managed Services*
 
 ### Rationale
 Based on our assumptions of no pre-existing infrastructure, no deep infrastructure expertise, budget minimization, and fast-paced environment with low operational overhead, we recommend a cloud-native approach using managed services.
@@ -54,11 +54,27 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
   - Server-Sent Events *(real-time updates for web clients)*
   - Webhooks *(event-driven notifications for integrations)*
 
+### Authentication & Authorization
+- **Primary**:
+  - Auth0
+    - OIDC/OAuth2.0
+      - PKCE flow *(single page appliations)*
+      - client_credentials flow *(machine-to-machine)*
+    - MFA
+      - Passkeys *(primary mfa)*
+      - TOTP *(secondary mfa)*
+- **Upgrade Path**:
+  - BetterAuth (OIDC/OAuth2.0 + Passkeys + TOTP) *(open source)*
+    - Requires DBs for auth data persistence
+      - Managed PostgreSQL: Supabase
+
 ### Data Storage
 - **Primary**:
   - Managed MongoDB: MongoDB Atlas *(jobs)*
   - Managed Redis: Upstash *(cache: quotas, jobs)*
   - AWS S3 IA/Glacier *(archives: logs, metrics)*
+- **Upgrade Path**:
+  - Managed PostgreSQL: Supabase *(auth, tenants, users)*
 
 ### Message Queuing
 - **Primary**:
@@ -82,20 +98,6 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
   - Add another RPC as backup *(fault tollerance)*
   - Add Alchemy *(webhook support)*
   - Add QuickNode *(lower latency)*
-
-### Authentication & Authorization
-- **Primary**:
-  - Auth0
-    - OIDC/OAuth2.0
-      - PKCE flow *(single page appliations)*
-      - client_credentials flow *(machine-to-machine)*
-    - MFA
-      - Passkeys *(primary mfa)*
-      - TOTP *(secondary mfa)*
-- **Upgrade Path**:
-  - BetterAuth (OIDC/OAuth2.0 + Passkeys + TOTP) *(open source)*
-    - Requires DBs for auth data persistence
-      - Managed PostgreSQL: Supabase
 
 ### Monitoring & Observability
 - **Primary**:

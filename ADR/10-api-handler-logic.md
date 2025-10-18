@@ -2,16 +2,8 @@
 
 ## Table of Contents
 
-### 1. Execution Duration
-- [Handler Duration Overview](#handler-duration-overview)
-
-### 2. Handler Execution Flows
-- [Job Creation Handler](#job-creation-handler)
-- [Job Processing Handler](#job-processing-handler)
-- [Job Confirmation Send Handler](#job-confirmation-send-handler)
-- [Job Confirmation Capture Orchestrator](#job-confirmation-capture-orchestrator)
-- [Job Confirmation Capture Handler](#job-confirmation-capture-handler)
-- [Job Reconciliation Handler](#job-reconciliation-handler)
+- [Execution Duration](#1-execution-duration)
+- [Handler Execution Flows](#2-handler-execution-flows)
 
 ---
 

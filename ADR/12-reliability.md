@@ -2,36 +2,12 @@
 
 ## Table of Contents
 
-### 1. Service Level Objectives (SLOs)
-- [SLO Options Analysis](#slo-options-analysis)
-- [Trade-offs Analysis](#trade-offs-analysis)
-- [Chosen Approach](#chosen-approach)
-
-### 2. Error Budget Policy
-- [Error Budget Options](#error-budget-options)
-- [Error Budget Definition](#error-budget-definition)
-- [Endpoint-Specific Error Budgets](#endpoint-specific-error-budgets)
-- [Burn Rate Policies](#burn-rate-policies)
-- [Response Actions](#response-actions)
-- [Error Budget Examples and Formulas](#error-budget-examples-and-formulas)
-
-### 3. Incident Response Procedures
-- [Response Procedures](#response-procedures)
-- [Communication Plan](#communication-plan)
-- [Multi-Trigger Combinations](#multi-trigger-combinations)
-- [Escalation Level Actions](#escalation-level-actions)
-
-### 4. Monitoring and Observability
-- [API Endpoints Latency Breakdown](#api-endpoints-latency-breakdown)
-- [Business Criticality Analysis](#business-criticality-analysis)
-- [API Endpoint Classification](#api-endpoint-classification)
-- [Latency Measurements and Targets](#latency-measurements-and-targets)
-
-### 5. Alerting
-- [Alerting Configuration](#alerting-configuration)
-
-### 6. Reliability Testing
-- [Testing Strategies](#testing-strategies)
+- [Service Level Objectives (SLOs)](#1-service-level-objectives-slos)
+- [Error Budget Policy](#2-error-budget-policy)
+- [Incident Response Procedures](#3-incident-response-procedures)
+- [Monitoring and Observability](#4-monitoring-and-observability)
+- [Alerting](#5-alerting)
+- [Reliability Testing](#6-reliability-testing)
 
 ---
 
