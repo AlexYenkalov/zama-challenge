@@ -2089,9 +2089,8 @@ This approach maximizes security, privacy, and user trust while allowing for fut
         - SLOAD (PAST_TOLERANCE): *2,100* gas
         - Time validation logic: *300* gas
         - REVERT opcode: *0* gas (revert is free)
+    
     ```ts
-
-
     contract EventAndStructJobConfirmation {
         // ============================================================================
         // EVENT & STRUCT JOB CONFIRMATION CONTRACT
@@ -2238,7 +2237,7 @@ This approach maximizes security, privacy, and user trust while allowing for fut
     ```
 
   - **Batch Confirmation (Batch)**
-    - ✅ **Gas efficiency**: *8,500* gas per job (10 jobs batch)
+    - ✅ **Gas efficiency**: *23,950* gas per batch
     - ✅ **Privacy preserving**: Job fingerprint is a hash from *job* and *salt*
       - ❌ But it still it could be a correlation factor
     - ✅ **Block Timestamp**: Available from block metadata
@@ -2272,7 +2271,7 @@ This approach maximizes security, privacy, and user trust while allowing for fut
       - Batch event emission: *1,750* gas (LOG3 opcode)
       - Function execution: *200* gas
       - **Total per batch**: *23,950* gas (regardless of batch size)
-
+    
     ```ts
     contract BatchJobConfirmation {
         // ============================================================================
@@ -2372,64 +2371,115 @@ This approach maximizes security, privacy, and user trust while allowing for fut
     }
     ```
 
+
+- **Security Considerations**:
+
+  - **Upgradability**: All implementations are immutable contracts
+    - ✅ **Security**: No upgrade attack vectors, maximum decentralization
+    - ❌ **Flexibility**: Cannot fix bugs or add features post-deployment
+
+  - **Pausability**: No pause mechanism in any implementation
+    - ✅ **Decentralization**: No central control, fully trustless
+    - ❌ **Emergency Response**: Cannot halt operations in case of critical bugs
+
+  - **Merkle Tree Security**
+    - ✅ **Cryptographic Integrity**: Merkle root proves all jobs are included in the batch
+    - ✅ **Tamper Evidence**: Any modification to job data breaks the Merkle root
+    - ✅ **Batch Verification**: Natural fit for batch processing with O(log n) complexity
+    - ✅ **Zero Gas Overhead**: Same costs as regular options but with enhanced security
+
+  - **Commit-Reveal MEV Protection**
+    - ✅ **Front-Running Protection**: Two-phase commit-reveal prevents MEV attacks
+    - ✅ **Data Hiding**: Commitment phase hides job data until reveal
+    - ✅ **Batch MEV Protection**: Natural fit for batch processing with MEV resistance
+    - ✅ **Zero Gas Overhead**: Same costs as regular options but with enhanced MEV protection
+
+  - **Authentication & Authorization of On-Chain Operations**:
+
+    - **Permissionless**: No access control - anyone can execute
+      - ✅ **Permissionless**: Fully decentralized
+      - ❌ **Security Risk**: Malicious actors can spam
+
+    - **OpenZeppelin Ownable**: Single owner model
+      - ✅ **Simple**: Single administrative account
+      - ❌ **Single Point of Failure**: Owner compromise affects system
+
+    - **OpenZeppelin AccessControl**: Role-based access control
+      - ✅ **Flexible Roles**: Multiple roles with specific permissions
+      - ❌ **Centralization**: Requires trusted administrators
+
+    - **SigCheck**: Confirmer signature verification
+      - ✅ **Tamper Evidence**: Any modification to job data breaks the signature
+      - ✅ **Cryptographic Authentication**: ECDSA signature proves confirmer identity
+      - ✅ **Non-Repudiation**: Signer cannot deny having signed the confirmation
+      - ❌ **Signature Overhead**: ECDSA verification required for every batch operation
+
+    - **ZK**: ZK proof verification
+      - ✅ **Cryptographic Authentication**: Only valid proof holders
+      - ✅ **Maximum Privacy**: ZK proofs enable job confirmation without revealing any job data
+      - ✅ **Cryptographic Privacy**: Mathematical proof of job validity without data exposure
+      - ✅ **Batch Privacy**: Natural fit for batch processing with complete data privacy
+      - ❌ **ZK Proof Overhead**: ZK proof generation and verification required for every batch operation
+      - ❌ **Higher Gas Cost**: 50,000 gas per batch (vs 23,950 for regular batch)
+
+
+
+- **Multi-Chain Cost Analysis**
+
+  - **Per Single Transaction by implementation options**
+
+    |---------------|------------|-----------------|----------------|------------|
+    | Blockchain    | EventOnly  | EventAndMapping | EventAndStruct | Batch      |
+    |---------------|------------|-----------------|----------------|------------|
+    | **Polygon**   | $0.17      | $0.71           | $0.83          | $0.04      |
+    | **Harmony**   | $0.13      | $0.53           | $0.62          | $0.03      |
+    | **Huobi**     | $0.13      | $0.53           | $0.62          | $0.03      |
+    | **KuCoin**    | $0.13      | $0.53           | $0.62          | $0.03      |
+    | **Cronos**    | $0.13      | $0.53           | $0.62          | $0.03      |
+    | **Moonriver** | $0.13      | $0.53           | $0.62          | $0.03      |
+    | **Avalanche** | $0.59      | $2.35           | $2.74          | $0.14      | 
+    | **BSC**       | $1.01      | $4.03           | $4.70          | $0.24      | 
+    | **Fantom**    | $0.27      | $1.08           | $1.26          | $0.06      |
+    | **Ethereum**  | $54.50     | $223.45         | $260.69        | $13.25     | 
+    |---------------|------------|-----------------|----------------|------------|
+
+  - **For 1M Jobs by implementation options**
+
+    |---------------|------------|-----------------|----------------|------------|------------|-------------|
+    | Blockchain    | EventOnly  | EventAndMapping | EventAndStruct | Batch(10)  | Batch(100) | Batch(1000) |
+    |---------------|------------|-----------------|----------------|------------|------------|-------------|
+    | **Polygon**   | $170,000   | $710,000        | $830,000       | $17,000    | $4,000     | $400        |
+    | **Harmony**   | $130,000   | $530,000        | $620,000       | $13,000    | $3,000     | $300        |
+    | **Huobi**     | $130,000   | $530,000        | $620,000       | $13,000    | $3,000     | $300        |
+    | **KuCoin**    | $130,000   | $530,000        | $620,000       | $13,000    | $3,000     | $300        |
+    | **Cronos**    | $130,000   | $530,000        | $620,000       | $13,000    | $3,000     | $300        |
+    | **Moonriver** | $130,000   | $530,000        | $620,000       | $13,000    | $3,000     | $300        |
+    | **Avalanche** | $590,000   | $2,350,000      | $2,740,000     | $59,000    | $14,000    | $1,400      |
+    | **BSC**       | $1,010,000 | $4,030,000      | $4,700,000     | $101,000   | $24,000    | $2,400      |
+    | **Fantom**    | $270,000   | $1,080,000      | $1,260,000     | $27,000    | $6,000     | $600        |
+    | **Ethereum**  | $54,500,000| $223,450,000    | $260,690,000   | $5,450,000 | $1,325,000 | $132,500    |
+    |---------------|------------|-----------------|----------------|------------|------------|-------------|
+
+
 - **Trade-offs**:
   - **Trustless Deployment vs Upgradability**
   - **Trustless Deployment vs Pausability**
-  - **Simple Mapping vs Extensible Struct**
   - **Ultra-low Cost vs On-chain State Checks**
+  - **Permissionless vs Access Control**
 
-- **Multi-Chain Cost Analysis per 1M On-chain Confirmation Transactions by implementation options**
 
-| Blockchain | EventOnly | EventAndMapping | EventAndStruct | Batch | Best Choice |
-|------------|-----------|-----------------|----------------|-------|-------------|
-| **Polygon** | $100 | $410 | $478 | $22 | Batch (78% savings) |
-| **Harmony** | $100 | $410 | $478 | $22 | Batch (78% savings) |
-| **Huobi** | $200 | $820 | $956 | $44 | Batch (78% savings) |
-| **KuCoin** | $500 | $2,050 | $2,390 | $110 | Batch (78% savings) |
-| **Cronos** | $1,000 | $4,100 | $4,780 | $220 | Batch (78% savings) |
-| **Moonriver** | $10,000 | $41,000 | $47,800 | $2,200 | Batch (78% savings) |
-| **Avalanche** | $20,000 | $82,000 | $95,600 | $4,400 | Batch (78% savings) |
-| **BSC** | $30,000 | $123,000 | $143,400 | $6,600 | Batch (78% savings) |
-| **Fantom** | $130,000 | $533,000 | $621,400 | $28,600 | Batch (78% savings) |
-| **Ethereum** | $6,030,000 | $24,723,000 | $28,823,400 | $1,326,600 | Batch (78% savings) |
-
-- **Chain-Specific Insights** (ordered by cost):
-  - **Polygon/Harmony**: Cheapest options ($65 for LargeBatch), ideal for high-volume applications
-  - **Huobi**: Very low cost ($130 for LargeBatch), good for cost-sensitive projects
-  - **KuCoin**: Low cost ($325 for LargeBatch), emerging ecosystem
-  - **Cronos**: Moderate cost ($650 for LargeBatch), Crypto.com ecosystem
-  - **Moonriver**: Higher cost ($6,500 for LargeBatch), Kusama parachain
-  - **Avalanche**: Mid-range cost ($13,000 for LargeBatch), good balance of features
-  - **BSC**: Higher cost ($19,500 for LargeBatch), but mature ecosystem
-  - **Fantom**: High cost ($84,500 for LargeBatch), fast finality
-  - **Ethereum**: Most expensive ($3.9M for LargeBatch), but highest security and decentralization
-- **Batch Processing Savings**: 
-  - **LargeBatch**: 35% savings vs EventOnly across all chains
-  - **SmallBatch**: 15% savings vs EventOnly across all chains
-  - **Cost range**: 60,000x difference between cheapest (Polygon/Harmony) and most expensive (Ethereum)
-
-- **Chosen Approach**: *Hybrid Batch Confirmation Strategy with Multi-Chain Deployment*
-  - **Primary Strategy**: LargeBatchJobConfirmation (6,500 gas per job) for high-volume operations
-  - **Fallback Strategy**: EventOnlyJobConfirmation (6,450 gas) for individual confirmations
-  - **Deployment Strategy**: Deploy on Polygon/Harmony for cost efficiency, with Ethereum as premium option
+- **Chosen Approach**: *Batch Job Confirmation Strategy with multiple deployments with security features tailored per use-case*
+  - **Primary Strategy**: BatchJobConfirmation (23,950 gas per batch) for high-volume operations
   - **Rationale:**
     - *Gas Efficiency*:
       - 35% cost savings vs EventOnly with batch processing
       - **$65 (on Polygon)** vs **$3.9M (on Ethereum)** for **1M transactions**
       - Optimal for high-volume applications (100+ jobs per batch)
-    - *Security*: Batch validation + individual job duplicate prevention
     - *Functionality*: 
       - Batch confirmation for high-volume operations
-      - Individual confirmation fallback for low-volume operations
-      - Hybrid approach based on job volume
     - *Scalability*:
       - Maximum cost efficiency for high-volume applications
       - **0.1T transactions** at the cost of **$6.5K (on Polygon)**
-      - Dynamic batch sizing based on network conditions
-    - *Multi-Chain*:
-      - Deploy on cost-optimized chains
-        - Polygon/Harmony for volume with batch processing
-        - Ethereum for security with individual confirmations
     - *Trustless Deployment*:
       - **Contract Simplicity**: Batch-optimized contracts with clear separation of concerns
       - **Contract Security**: No upgrade mechanisms, ensuring contract finality and security
