@@ -50,14 +50,14 @@
 | *Aggressive*     | 0.3% (26.3h/y) | 2x, 5x        | Min restrictions, focus on fixes   | Rapid iteration        | Higher risk tolerance          | Internal services |
 | *Adaptive*       | 0.1%→0.05%     | 1.5x, 3x, 6x  | Start loose, tighten as matures    | Data-driven            | Complex to implement           | New services      |
 
-- **Error Budget Definition** *(Moderate Approach for New Service)*:
+- **Error Budget Definition** `(Moderate Approach for New Service)`:
   - **HIGH Criticality** (50% buffer): 0.1% error budget (8.77 hours/year) - *Zero tolerance for SLO violations during critical launch phase*
   - **MEDIUM Criticality** (35% buffer): 0.1% error budget (8.77 hours/year) - *Consistent with new service learning approach*
   - **LOW Criticality** (15% buffer): 0.1% error budget (8.77 hours/year) - *Unified error budget for new service simplicity*
   
   **Rationale**: New services require consistent, conservative error budgets across all criticality levels to ensure zero tolerance for SLO violations during the critical launch phase, while allowing for learning and optimization.
 
-- **Endpoint-Specific Error Budgets** *(All 0.1% for New Service Simplicity)*:
+- **Endpoint-Specific Error Budgets** `(All 0.1% for New Service Simplicity)`:
   - **Jobs API** (HIGH): 0.1% (8.77h/year) - *Revenue-critical, zero tolerance*
   - **Users API** (HIGH): 0.1% (8.77h/year) - *Customer-facing, zero tolerance*
   - **Billing API** (HIGH): 0.1% (8.77h/year) - *Financial data, zero tolerance*
@@ -65,7 +65,7 @@
   - **Analytics API** (MEDIUM): 0.1% (8.77h/year) - *Consistent with new service approach*
   - **System API** (LOW): 0.1% (8.77h/year) - *Unified approach for simplicity*
 
-- **Burn Rate Policies** *(Learning-Oriented)*:
+- **Burn Rate Policies** `(Learning-Oriented)`:
   - **Normal Burn Rate**: 1x (within SLO) - *Baseline performance*
   - **Learning Burn Rate**: 1.5x (new service discovery phase) - *Expected during learning, monitor and document*
   - **High Burn Rate**: 3x (investigate but don't panic) - *Alert on-call, continue learning*
@@ -252,238 +252,238 @@
 
 ## 4. Monitoring and Observability
 
-### **API Endppoints Latency Breakdown** + **Static** *p95* **Estimation** 
+### **API Endpoints Latency Breakdown** + **Static** `p95` **Estimation** 
 
-  - **GET /system/health** *(System Health Check)*:
+  - **GET /system/health** `(System Health Check)`:
     - **Availability**: 99.5% (43.8 hours downtime/year)
-    - **Latency**: *(200 OK response, basic health status)*
+    - **Latency**: `(200 OK response, basic health status)`
       - **Targets**:
-        - p95 ≤ 50ms *(Buffer: 15% - LOW business criticality factor applied)*
-      - **Breakdown** *(Request Flow - Internal Health Check)*:
+        - p95 ≤ 50ms `(Buffer: 15% - LOW business criticality factor applied)`
+      - **Breakdown** `(Request Flow - Internal Health Check)`:
         - **Network Layer**:
-          - 1-3ms: Local network latency *(Same VPC/region communication)*
-          - 0ms: No SSL/TLS *(Internal health checks use HTTP)*
-          - 0.5-1ms: Network jitter (overhead) *(Minimal internal network)*
+          - 1-3ms: Local network latency `(Same VPC/region communication)`
+          - 0ms: No SSL/TLS `(Internal health checks use HTTP)`
+          - 0.5-1ms: Network jitter (overhead) `(Minimal internal network)`
         - **Application Layer**:
-          - 0.5-1ms: OpenTelemetry instrumentation start *(OTEL span creation)*
-          - 1-2ms: Health check logic *(Basic system checks - memory, CPU, app state)*
-          - 1-2ms: Response generation *(JSON serialization with health status)*
-          - 0.5-1ms: OpenTelemetry instrumentation end *(OTEL span completion, CloudWatch logs)*
+          - 0.5-1ms: OpenTelemetry instrumentation start `(OTEL span creation)`
+          - 1-2ms: Health check logic `(Basic system checks - memory, CPU, app state)`
+          - 1-2ms: Response generation `(JSON serialization with health status)`
+          - 0.5-1ms: OpenTelemetry instrumentation end `(OTEL span completion, CloudWatch logs)`
         - **Total**: 3-8ms
         - **Missing Factors**: Peak load handling, Resource contention
 
-  - **GET /system/ready** *(System Readiness Check)*:
+  - **GET /system/ready** `(System Readiness Check)`:
     - **Availability**: 99.5% (43.8 hours downtime/year)
-    - **Latency**: *(200 OK response, dependency health status)*
+    - **Latency**: `(200 OK response, dependency health status)`
       - **Targets**:
-        - p95 ≤ 100ms *(Buffer: 15% - LOW business criticality factor applied)*
-      - **Breakdown** *(Request Flow - Internal Readiness Check)*:
+        - p95 ≤ 100ms `(Buffer: 15% - LOW business criticality factor applied)`
+      - **Breakdown** `(Request Flow - Internal Readiness Check)`:
         - **Network Layer**:
-          - 1-3ms: Local network latency *(Same VPC/region communication)*
-          - 0ms: No SSL/TLS *(Internal readiness checks use HTTP)*
-          - 0.5-1ms: Network jitter (overhead) *(Minimal internal network)*
+          - 1-3ms: Local network latency `(Same VPC/region communication)`
+          - 0ms: No SSL/TLS `(Internal readiness checks use HTTP)`
+          - 0.5-1ms: Network jitter (overhead) `(Minimal internal network)`
         - **Application Layer**:
-          - 0.5-1ms: OpenTelemetry instrumentation start *(OTEL span creation)*
-          - 15-35ms: External dependency readiness checks *(Critical service health verification)*
-            - 5-10ms: MongoDB Atlas connection check *(Database connectivity and query execution)*
-            - 3-6ms: Upstash Redis connection check *(Cache connectivity and basic operations)*
-            - 4-8ms: AWS SNS health check *(Message queue connectivity and permissions)*
-            - 4-8ms: AWS SQS health check *(Queue service connectivity and permissions)*
-            - 3-5ms: Auth0 service check *(Authentication service connectivity and token validation)*
-          - 2-5ms: Readiness status aggregation *(Dependency health compilation)*
-          - 1-3ms: Response generation *(JSON serialization with health details)*
-          - 0.5-1ms: OpenTelemetry instrumentation end *(OTEL span completion, CloudWatch logs)*
+          - 0.5-1ms: OpenTelemetry instrumentation start `(OTEL span creation)`
+          - 15-35ms: External dependency readiness checks `(Critical service health verification)`
+            - 5-10ms: MongoDB Atlas connection check `(Database connectivity and query execution)`
+            - 3-6ms: Upstash Redis connection check `(Cache connectivity and basic operations)`
+            - 4-8ms: AWS SNS health check `(Message queue connectivity and permissions)`
+            - 4-8ms: AWS SQS health check `(Queue service connectivity and permissions)`
+            - 3-5ms: Auth0 service check `(Authentication service connectivity and token validation)`
+          - 2-5ms: Readiness status aggregation `(Dependency health compilation)`
+          - 1-3ms: Response generation `(JSON serialization with health details)`
+          - 0.5-1ms: OpenTelemetry instrumentation end `(OTEL span completion, CloudWatch logs)`
         - **Total**: 20-45ms
         - **Missing Factors**: Peak load handling, Resource contention
         - **Business Justification**: Ensures all critical external dependencies are operational before accepting traffic, preventing cascading failures
 
-  - **POST /jobs** *(Job Creation)*:
+  - **POST /jobs** `(Job Creation)`:
     - **Availability**: 99.9% (8.77 hours downtime/year)
-    - **Latency**: *(202 Accepted response, starts async pipeline)*
+    - **Latency**: `(202 Accepted response, starts async pipeline)`
       - **Targets**:
-        - p95 ≤ 263ms *(Buffer: 50% - HIGH business criticality factor applied)*
-      - **Breakdown** *(Request Flow - Client to Server)*:
+        - p95 ≤ 263ms `(Buffer: 50% - HIGH business criticality factor applied)`
+      - **Breakdown** `(Request Flow - Client to Server)`:
         - **Network Layer**:
-          - 10-50ms: Geographic distribution *(Cross-region latency)*
-          - 5-15ms: SSL/TLS handshake *(New connections only)*
-          - 2-5ms: Network jitter (overhead) *(Network latency)*
+          - 10-50ms: Geographic distribution `(Cross-region latency)`
+          - 5-15ms: SSL/TLS handshake `(New connections only)`
+          - 2-5ms: Network jitter (overhead) `(Network latency)`
         - **Load Balancer Layer**:
-          - 1-3ms: Load balancer health checks *(Health check overhead)*
+          - 1-3ms: Load balancer health checks `(Health check overhead)`
         - **Gateway Layer**:
-          - 1-3ms: WAF protection *(Gateway security factor - modern WAFs)*
-          - 0.5-2ms: Rate limiting check *(Redis-based rate limiting)*
-          - 1-3ms: Quota validation *(Database quota checks with proper indexing)*
+          - 1-3ms: WAF protection `(Gateway security factor - modern WAFs)`
+          - 0.5-2ms: Rate limiting check `(Redis-based rate limiting)`
+          - 1-3ms: Quota validation `(Database quota checks with proper indexing)`
         - **Application Layer**:
-          - 1-2ms: OpenTelemetry instrumentation start *(OTEL span creation)*
-          - 2-5ms: Authentication/authorization *(JWT validation, OAuth2)*
-          - 3-8ms: Request validation *(Request processing factor)*
+          - 1-2ms: OpenTelemetry instrumentation start `(OTEL span creation)`
+          - 2-5ms: Authentication/authorization `(JWT validation, OAuth2)`
+          - 3-8ms: Request validation `(Request processing factor)`
             - 3-5ms: 1-10KB
             - 5-8ms: 10-100KB
             - 6-8ms: 100-256KB
-          - 1-3ms: Idempotency check *(Redis-based idempotency)*
-          - 1-3ms: Cache miss penalties *(Redis cache misses)*
-          - 2-5ms: Database connection pooling *(Connection overhead)*
-          - 5-15ms: Database load (job creation) *(Optimized database operations)*
+          - 1-3ms: Idempotency check `(Redis-based idempotency)`
+          - 1-3ms: Cache miss penalties `(Redis cache misses)`
+          - 2-5ms: Database connection pooling `(Connection overhead)`
+          - 5-15ms: Database load (job creation) `(Optimized database operations)`
             - *high value operation:* **job creation**
             - *5-10ms could be saved* if async via SNS/SQS
             - *keeping it sync* for **immediate client feedback**
-          - 10-50ms: AWS SNS publish *(Event notifications)*
-          - 1-3ms: Response generation *(JSON serialization)*
-          - 1-2ms: OpenTelemetry instrumentation end *(OTEL span completion, CloudWatch logs)*
+          - 10-50ms: AWS SNS publish `(Event notifications)`
+          - 1-3ms: Response generation `(JSON serialization)`
+          - 1-2ms: OpenTelemetry instrumentation end `(OTEL span completion, CloudWatch logs)`
         - **Total**: 46-175ms
         - **Missing Factors**: Peak load handling, Resource contention
 
-  - **PUT /jobs/:id** *(Job Status Update)*:
+  - **PUT /jobs/:id** `(Job Status Update)`:
     - **Availability**: 99.9% (8.77 hours downtime/year)
-    - **Latency**: *(200 OK response, immediate status update)*
+    - **Latency**: `(200 OK response, immediate status update)`
       - **Targets**:
-        - p95 ≤ 383ms *(Buffer: 50% - HIGH business criticality factor applied)*
-      - **Breakdown** *(Request Flow - Client to Server)*:
+        - p95 ≤ 383ms `(Buffer: 50% - HIGH business criticality factor applied)`
+      - **Breakdown** `(Request Flow - Client to Server)`:
         - **Network Layer**:
-          - 10-50ms: Geographic distribution *(Cross-region latency)*
-          - 5-15ms: SSL/TLS handshake *(New connections only)*
-          - 2-5ms: Network jitter (overhead) *(Network latency)*
+          - 10-50ms: Geographic distribution `(Cross-region latency)`
+          - 5-15ms: SSL/TLS handshake `(New connections only)`
+          - 2-5ms: Network jitter (overhead) `(Network latency)`
         - **Load Balancer Layer**:
-          - 1-3ms: Load balancer health checks *(Health check overhead)*
+          - 1-3ms: Load balancer health checks `(Health check overhead)`
         - **Gateway Layer**:
-          - 1-3ms: WAF protection *(Gateway security factor - modern WAFs)*
-          - 0.5-2ms: Rate limiting check *(Redis-based rate limiting)*
-          - 1-3ms: Quota validation *(Database quota checks with proper indexing)*
+          - 1-3ms: WAF protection `(Gateway security factor - modern WAFs)`
+          - 0.5-2ms: Rate limiting check `(Redis-based rate limiting)`
+          - 1-3ms: Quota validation `(Database quota checks with proper indexing)`
         - **Application Layer**:
-          - 1-2ms: OpenTelemetry instrumentation start *(OTEL span creation)*
-          - 2-5ms: Authentication/authorization *(JWT validation, OAuth2)*
-          - 3-8ms: Request validation *(Request processing factor)*
+          - 1-2ms: OpenTelemetry instrumentation start `(OTEL span creation)`
+          - 2-5ms: Authentication/authorization `(JWT validation, OAuth2)`
+          - 3-8ms: Request validation `(Request processing factor)`
             - 3-5ms: 1-10KB
             - 5-8ms: 10-100KB
             - 6-8ms: 100-256KB
-          - 1-3ms: Idempotency check *(Redis-based idempotency)*
-          - 1-3ms: Cache miss penalties *(Redis cache misses)*
-          - 2-5ms: Database connection pooling *(Connection overhead)*
-          - 10-30ms: Job lookup *(Database lookup factor)*
-          - 5-10ms: Status validation *(Business logic factor)*
-          - 30-80ms: Database load (job status update) *(Optimized database operations)*
+          - 1-3ms: Idempotency check `(Redis-based idempotency)`
+          - 1-3ms: Cache miss penalties `(Redis cache misses)`
+          - 2-5ms: Database connection pooling `(Connection overhead)`
+          - 10-30ms: Job lookup `(Database lookup factor)`
+          - 5-10ms: Status validation `(Business logic factor)`
+          - 30-80ms: Database load (job status update) `(Optimized database operations)`
             - *high value operation*: **job status update**
             - *25-65ms could be saved* if async via SNS/SQS
             - *keeping it sync* for **immediate client feedback**
-          - 10-20ms: Event emission *(Event processing factor)*
-          - 1-3ms: Response generation *(JSON serialization)*
-          - 1-2ms: OpenTelemetry instrumentation end *(OTEL span completion, CloudWatch logs)*
+          - 10-20ms: Event emission `(Event processing factor)`
+          - 1-3ms: Response generation `(JSON serialization)`
+          - 1-2ms: OpenTelemetry instrumentation end `(OTEL span completion, CloudWatch logs)`
         - **Total**: 95-255ms
         - **Missing Factors**: Peak load handling, Resource contention
 
-  - **DELETE /jobs/:id** *(Job Deletion)*:
+  - **DELETE /jobs/:id** `(Job Deletion)`:
     - **Availability**: 99.9% (8.77 hours downtime/year)
-    - **Latency**: *(200 OK response, immediate deletion)*
+    - **Latency**: `(200 OK response, immediate deletion)`
       - **Targets**:
-        - p95 ≤ 365ms *(Buffer: 35% - MEDIUM business criticality factor applied)*
-      - **Breakdown** *(Request Flow - Client to Server)*:
+        - p95 ≤ 365ms `(Buffer: 35% - MEDIUM business criticality factor applied)`
+      - **Breakdown** `(Request Flow - Client to Server)`:
         - **Network Layer**:
-          - 10-50ms: Geographic distribution *(Cross-region latency)*
-          - 5-15ms: SSL/TLS handshake *(New connections only)*
-          - 2-5ms: Network jitter (overhead) *(Network latency)*
+          - 10-50ms: Geographic distribution `(Cross-region latency)`
+          - 5-15ms: SSL/TLS handshake `(New connections only)`
+          - 2-5ms: Network jitter (overhead) `(Network latency)`
         - **Load Balancer Layer**:
-          - 1-3ms: Load balancer health checks *(Health check overhead)*
+          - 1-3ms: Load balancer health checks `(Health check overhead)`
         - **Gateway Layer**:
-          - 1-3ms: WAF protection *(Gateway security factor - modern WAFs)*
-          - 0.5-2ms: Rate limiting check *(Redis-based rate limiting)*
-          - 1-3ms: Quota validation *(Database quota checks with proper indexing)*
+          - 1-3ms: WAF protection `(Gateway security factor - modern WAFs)`
+          - 0.5-2ms: Rate limiting check `(Redis-based rate limiting)`
+          - 1-3ms: Quota validation `(Database quota checks with proper indexing)`
         - **Application Layer**:
-          - 1-2ms: OpenTelemetry instrumentation start *(OTEL span creation)*
-          - 2-5ms: Authentication/authorization *(JWT validation, OAuth2)*
-          - 3-8ms: Request validation *(Request processing factor)*
+          - 1-2ms: OpenTelemetry instrumentation start `(OTEL span creation)`
+          - 2-5ms: Authentication/authorization `(JWT validation, OAuth2)`
+          - 3-8ms: Request validation `(Request processing factor)`
             - 3-5ms: 1-10KB
             - 5-8ms: 10-100KB
             - 6-8ms: 100-256KB
-          - 1-3ms: Idempotency check *(Redis-based idempotency)*
-          - 1-3ms: Cache miss penalties *(Redis cache misses)*
-          - 2-5ms: Database connection pooling *(Connection overhead)*
-          - 10-30ms: Job lookup *(Database lookup factor)*
-          - 5-10ms: Deletion validation *(Business logic factor)*
-          - 20-60ms: Database load (job deletion) *(Optimized database operations)*
+          - 1-3ms: Idempotency check `(Redis-based idempotency)`
+          - 1-3ms: Cache miss penalties `(Redis cache misses)`
+          - 2-5ms: Database connection pooling `(Connection overhead)`
+          - 10-30ms: Job lookup `(Database lookup factor)`
+          - 5-10ms: Deletion validation `(Business logic factor)`
+          - 20-60ms: Database load (job deletion) `(Optimized database operations)`
             - *high value operation*: **job deletion**
             - *15-45ms could be saved* if async via SNS/SQS
             - *keeping it sync* for **immediate client feedback**
-          - 20-50ms: Cleanup operations *(Cleanup processing factor)*
-          - 10-20ms: Event emission *(Event processing factor)*
-          - 1-3ms: Response generation *(JSON serialization)*
-          - 1-2ms: OpenTelemetry instrumentation end *(OTEL span completion, CloudWatch logs)*
+          - 20-50ms: Cleanup operations `(Cleanup processing factor)`
+          - 10-20ms: Event emission `(Event processing factor)`
+          - 1-3ms: Response generation `(JSON serialization)`
+          - 1-2ms: OpenTelemetry instrumentation end `(OTEL span completion, CloudWatch logs)`
         - **Total**: 115-270ms
         - **Missing Factors**: Peak load handling, Resource contention
 
-  - **GET /jobs/:id** *(Job: Basic Details)*:
+  - **GET /jobs/:id** `(Job: Basic Details)`:
     - **Availability**: 99.9% (8.77 hours downtime/year)
-    - **Latency**: *(200 OK response, job status data)*
+    - **Latency**: `(200 OK response, job status data)`
       - **Targets**:
-        - p95 ≤ 210ms *(Buffer: 50% - HIGH business criticality factor applied)*
-      - **Breakdown** *(Request Flow - Client to Server)*:
+        - p95 ≤ 210ms `(Buffer: 50% - HIGH business criticality factor applied)`
+      - **Breakdown** `(Request Flow - Client to Server)`:
         - **Network Layer**:
-          - 10-50ms: Geographic distribution *(Cross-region latency)*
-          - 5-15ms: SSL/TLS handshake *(New connections only)*
-          - 2-5ms: Network jitter (overhead) *(Network latency)*
+          - 10-50ms: Geographic distribution `(Cross-region latency)`
+          - 5-15ms: SSL/TLS handshake `(New connections only)`
+          - 2-5ms: Network jitter (overhead) `(Network latency)`
         - **Load Balancer Layer**:
-          - 1-3ms: Load balancer health checks *(Health check overhead)*
+          - 1-3ms: Load balancer health checks `(Health check overhead)`
         - **Gateway Layer**:
-          - 1-3ms: WAF protection *(Gateway security factor - modern WAFs)*
-          - 0.5-2ms: Rate limiting check *(Redis-based rate limiting)*
-          - 1-3ms: Quota validation *(Database quota checks with proper indexing)*
+          - 1-3ms: WAF protection `(Gateway security factor - modern WAFs)`
+          - 0.5-2ms: Rate limiting check `(Redis-based rate limiting)`
+          - 1-3ms: Quota validation `(Database quota checks with proper indexing)`
         - **Application Layer**:
-          - 1-2ms: OpenTelemetry instrumentation start *(OTEL span creation)*
-          - 2-5ms: Authentication/authorization *(JWT validation, OAuth2)*
-          - 3-8ms: Request validation *(Request processing factor)*
+          - 1-2ms: OpenTelemetry instrumentation start `(OTEL span creation)`
+          - 2-5ms: Authentication/authorization `(JWT validation, OAuth2)`
+          - 3-8ms: Request validation `(Request processing factor)`
             - 3-5ms: 1-10KB
             - 5-8ms: 10-100KB
             - 6-8ms: 100-256KB
-          - 1-3ms: Idempotency check *(Redis-based idempotency)*
-          - 1-3ms: Cache miss penalties *(Redis cache misses)*
-          - 2-5ms: Database connection pooling *(Connection overhead)*
-          - 2-5ms: Cache lookup (Redis) *(Cache hit optimization)*
-          - 10-30ms: Database load (cache miss fallback) *(Optimized database operations)*
-          - 5-15ms: Data serialization *(Data processing factor)*
-          - 1-3ms: Response generation *(JSON serialization)*
-          - 1-2ms: Monitoring/metrics collection *(Observability overhead)*
+          - 1-3ms: Idempotency check `(Redis-based idempotency)`
+          - 1-3ms: Cache miss penalties `(Redis cache misses)`
+          - 2-5ms: Database connection pooling `(Connection overhead)`
+          - 2-5ms: Cache lookup (Redis) `(Cache hit optimization)`
+          - 10-30ms: Database load (cache miss fallback) `(Optimized database operations)`
+          - 5-15ms: Data serialization `(Data processing factor)`
+          - 1-3ms: Response generation `(JSON serialization)`
+          - 1-2ms: Monitoring/metrics collection `(Observability overhead)`
         - **Total**: 55-140ms
         - **Missing Factors**: Peak load handling, Resource contention
 
-  - **GET /jobs/:id/outputs** *(Job Outputs)*:
+  - **GET /jobs/:id/outputs** `(Job Outputs)`:
     - **Availability**: 99.9% (8.77 hours downtime/year)
-    - **Latency**: *(200 OK response, job outputs data)*
+    - **Latency**: `(200 OK response, job outputs data)`
       - **Targets**:
-        - p95 ≤ 218ms *(Buffer: 50% - HIGH business criticality factor applied)*
-      - **Breakdown** *(Request Flow - Client to Server)*:
+        - p95 ≤ 218ms `(Buffer: 50% - HIGH business criticality factor applied)`
+      - **Breakdown** `(Request Flow - Client to Server)`:
         - **Network Layer**:
-          - 10-50ms: Geographic distribution *(Cross-region latency)*
-          - 5-15ms: SSL/TLS handshake *(New connections only)*
-          - 2-5ms: Network jitter (overhead) *(Network latency)*
+          - 10-50ms: Geographic distribution `(Cross-region latency)`
+          - 5-15ms: SSL/TLS handshake `(New connections only)`
+          - 2-5ms: Network jitter (overhead) `(Network latency)`
         - **Load Balancer Layer**:
-          - 1-3ms: Load balancer health checks *(Health check overhead)*
+          - 1-3ms: Load balancer health checks `(Health check overhead)`
         - **Gateway Layer**:
-          - 1-3ms: WAF protection *(Gateway security factor - modern WAFs)*
-          - 0.5-2ms: Rate limiting check *(Redis-based rate limiting)*
-          - 1-3ms: Quota validation *(Database quota checks with proper indexing)*
+          - 1-3ms: WAF protection `(Gateway security factor - modern WAFs)`
+          - 0.5-2ms: Rate limiting check `(Redis-based rate limiting)`
+          - 1-3ms: Quota validation `(Database quota checks with proper indexing)`
         - **Application Layer**:
-          - 1-2ms: OpenTelemetry instrumentation start *(OTEL span creation)*
-          - 2-5ms: Authentication/authorization *(JWT validation, OAuth2)*
-          - 3-8ms: Request validation *(Request processing factor)*
+          - 1-2ms: OpenTelemetry instrumentation start `(OTEL span creation)`
+          - 2-5ms: Authentication/authorization `(JWT validation, OAuth2)`
+          - 3-8ms: Request validation `(Request processing factor)`
             - 3-5ms: 1-10KB
             - 5-8ms: 10-100KB
             - 6-8ms: 100-256KB
-          - 1-3ms: Idempotency check *(Redis-based idempotency)*
-          - 1-3ms: Cache miss penalties *(Redis cache misses)*
-          - 2-5ms: Database connection pooling *(Connection overhead)*
-          - 2-5ms: Cache lookup (Redis) *(Cache hit optimization)*
-          - 10-30ms: Database load (cache miss fallback) *(Optimized database operations)*
-          - 5-15ms: Data serialization *(Data processing factor)*
-          - 1-3ms: Response generation *(JSON serialization)*
-          - 1-2ms: OpenTelemetry instrumentation end *(OTEL span completion, CloudWatch logs)*
+          - 1-3ms: Idempotency check `(Redis-based idempotency)`
+          - 1-3ms: Cache miss penalties `(Redis cache misses)`
+          - 2-5ms: Database connection pooling `(Connection overhead)`
+          - 2-5ms: Cache lookup (Redis) `(Cache hit optimization)`
+          - 10-30ms: Database load (cache miss fallback) `(Optimized database operations)`
+          - 5-15ms: Data serialization `(Data processing factor)`
+          - 1-3ms: Response generation `(JSON serialization)`
+          - 1-2ms: OpenTelemetry instrumentation end `(OTEL span completion, CloudWatch logs)`
         - **Total**: 57-145ms
         - **Missing Factors**: Peak load handling, Resource contention
 
 
-  - TODO: *(Remaining API Endpoints)*
+  - TODO: `(Remaining API Endpoints)`
 
-    - GET /jobs/:id/status *(dedicated endpoint, prevents over-fetching)*
-    - GET /jobs/:id/stream *(separate endpoint for Server-Sent Events)*
-    - POST /jobs/reconcile *(internal endpoint, automates retying DLQ job(s))*
+    - GET /jobs/:id/status `(dedicated endpoint, prevents over-fetching)`
+    - GET /jobs/:id/stream `(separate endpoint for Server-Sent Events)`
+    - POST /jobs/reconcile `(internal endpoint, automates retying DLQ job(s))`
 
     - GET /users
     - GET /users/:id`
@@ -497,8 +497,8 @@
     - PUT /webhooks/:id
     - DELETE /webhooks/:id
 
-    - GET /billing/usage *(usage data i.e. quota usage)*
-    - GET /billing/invoices *(issued invoices)*
+    - GET /billing/usage `(usage data i.e. quota usage)`
+    - GET /billing/invoices `(issued invoices)`
 
     - GET /analytics/jobs
 
@@ -545,7 +545,7 @@
 
 ##### **Business Criticality**: *Classification Decision Matrix*:
 
-| **Factor**              | Level: **HIGH** *(40-55%)*        | Level: **MEDIUM** *(25-35%)*   | Level: **LOW** *(0-15%)*       |
+| **Factor**              | Level: **HIGH** `(40-55%)`        | Level: **MEDIUM** `(25-35%)`   | Level: **LOW** `(0-15%)`       |
 |-------------------------|-----------------------------------|--------------------------------|--------------------------------|
 | **Customer Impact**     | ✅ Direct customer interaction    | ⚠️ Limited customer interaction | ❌ No customer interaction     |
 | **Revenue Impact**      | ✅ Direct revenue generation      | ⚠️ Indirect revenue support     | ❌ No revenue impact           |
