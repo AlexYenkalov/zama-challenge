@@ -76,7 +76,7 @@ This is a design-led exercise to demonstrate architectural decision-making skill
 #### Job Processing & Lifecycle
   - *(R)* **Job State Management**: Job state management logic for lifecycle transitions
   - *(I)* **Job Processing**: Asynchronous job processing by async job handlers
-  - *(R)* **Job Lifecycle**: Job status transitions (`created` → `processing` → `completed` → `confirming` → `confirmed`) with event emission for usage metering and billing
+  - *(R)* **Job Lifecycle**: Job status transitions (`queued` → `processing` → `processed` → `confirmed`) with event emission for usage metering and billing
   - *(R)* **Job Metering**: Capture usage events for billing system
 
 #### Error Handling & Recovery

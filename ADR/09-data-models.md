@@ -133,7 +133,7 @@
        * Job Status
       */
       enum JobStatusEnum {
-        Unknown = 0
+        Unknown = 0,
         Queued = 1,
         Processing = 2,
         Processed = 3,
