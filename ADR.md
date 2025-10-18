@@ -1162,286 +1162,441 @@ Based on our assumptions of no pre-existing infrastructure, no deep infrastructu
 
 **Note**: Pricing Plan models are relevant if we gonna use **open source** solution from **Lago**
 
-- **Entities**
-  - *Tenant*
-  - *User*
-  - *Pricing Plan Subscription*
-  - *Pricing Plan Declaration*
-  - *Pricing Plan Quota*
-  - *Pricing Plan Quota Usage Event*
+- **Entities**: *Jobs*
 
-- **Relationships**: 
-  - **One-to-Many**: *Tenant* → *User*
-  - **One-to-One**: *Tenant* → *Pricing Plan Subscription*
-  - **One-to-One**: *Pricing Plan Subscription* → *Pricing Plan Declaration*
-  - **One-to-Many**: *Pricing Plan Declarati*on → *Pricing Plan Quota*
-  - **One-to-Many**: *Pricing Plan Quota* → *Pricing Plan Quota Usage Event*
+  - **Entity Interfaces**
 
-- **Entity Interfaces**
-    ```typescript
-
-    /**
-     * Tenant
-     * - it terminally captures deletion date
-     */
-    interface TenantEntity {
-      @IsPrimaryKey()
-      @IsUUID()
-      id: string;
-      
-      @IsEnumProperty(TenantTypeEnum)
-      type: TenantTypeEnum;
-
-      @IsEnumProperty(TenantStatusEnum)
-      status: TenantStatusEnum;
-
-      @IsEmailAddressProperty()
-      email_address: string;
-
-      @IsStringProperty()
-      name: string;
-
-      @IsForeignKey()
-      @IsStringProperty()
-      pricing_plan_subscription_id?: string;
-      
-      @IsDateProperty()
-      created_at: Date;
-      
-      @IsDateProperty({ isNullable: true })
-      updated_at?: Date | null;
-
-      @IsDateProperty({ isNullable: true })
-      deleted_at?: Date | null;
+    - **Problem Detail (ERC 9...)**
+    ```ts
+    interface ProblemDetail {
+      // TODO
     }
+    ```
 
-    /**
-     * Supported transitions of tenant statuses:
-     * - Active → Suspended: by client or by system admin
-     * - Suspended → Active: by client or by system admin
-     * - Active → Deleted: by client or by system admin (email can be reused)
-     * - Suspended → Deleted: by client or by system admin (email can be reused)
-     */
-    enum TenantStatusEnum {
-      Active = 1,
-      Suspended = 2,
-      Deleted = 3,
+    - **Result / Error**
+    ```ts
+      type ResultData = unnkown | null;
+      type ResultError = unnkown | null | ProblemDetail;
+
+      interface Result {
+        status: boolean
+        data: ResultData;
+        error: ResultError;
+      }
+    ```
+
+    - **Tx Receipt**
+    ```ts
+    interface TxReceipt {
+      // TODO
     }
-    
-    enum TenantTypeEnum {
-      Individual = 1,
-      Business = 2,
-      Enterprise = 3,
-    }
+    ```
 
-    /**
-     * Pricing Plan Declaration for tenant subscription
-     */
-    interface PricingPlanDeclarationEntity {
-      @IsPrimaryKey()
-      @IsUUID()
-      id: string;
+    - **Job**
+    ```ts
+      /**
+       * Job Entity
+        * - References tenant_id and author_id (user_id)
+        * - Tracks job lifecycle from creation to completion
+        */
+      interface JobEntity {
+        @IsPrimaryKey()
+        @IsStringProperty()
+        id: string;
 
-      @IsEnumProperty(PricingPlanTypeEnum)
-      type: PricingPlanTypeEnum;
+        @IsStringProperty()
+        type: string;
 
-      @IsDateProperty()
-      created_at: Date;
-      
-      @IsDateProperty({ isNullable: true })
-      updated_at?: Date | null;
-    }
+        @IsForeignKey()
+        @IsStringProperty()
+        author_id: string;
 
-    enum PricingPlanTypeEnum {
-      Free = 1,
-      Starter = 2,
-      Professional = 3,
-      Business = 3,
-      Enterprise = 3,
-    }
+        @IsForeignKey()
+        @IsStringProperty()
+        tenant_id: string;
 
-    /**
-     * Pricing Plan Quota Declaration
-     * - assgined to `pricing_plan_declaration_id
-     * - type URL examples:
-     *   - {tenant_id}.example.com/{version}/{event_namespace}/{event_id}/{event_type}?{k}={v},{k}={v},{k}={v}
-     *   - example.com/v1/jobs/007/created}?priority=1
-     *   - example.com/v1/jobs/007/completed?compute_ms=10000,compute_bytes=100000
-     *   - example.com/v1/jobs/007/confirmed}?chain_id=666,block_number=999,tx_hash=0x..
-     *   - example.com/v1/jobs/007/failed}?error_code=555,error_message=billable_error_code,compute_ms=10000,compute_bytes=100000
-     */
-    interface PricingPlanQuotaDeclaration {
-      @IsPrimaryKey()
-      @IsUUID()
-      id: string;
+        @IsObjectProperty()
+        state: JobStateEntity;
 
-      @IsURL()
-      type: string;
+        @IsArrayProperty()
+        inputs: JobInputEntity[];
 
-      @IsStringProperty()
-      name: string;
+        @IsArrayProperty({ isNullable: true })
+        outputs?: JobOutputEntity[] | null;
 
-      @IsStringProperty({ isNotEmpty: false })
-      description: string;
+        @IsDateProperty()
+        created_at: Date;
 
-      @IsIntegerProperty({ isGreaterThan: 0 })
-      limit: number;
+        @IsDateProperty({ isNullable: true })
+        updated_at?: Date | null;
 
-      @IsForeignKey()
-      @IsStringProperty()
-      pricing_plan_declaration_id: string;
+        @IsDateProperty({ isNullable: true })
+        queued_at?: Date | null;
 
-      @IsDateProperty()
-      created_at: Date;
-      
-      @IsDateProperty({ isNullable: true })
-      updated_at?: Date | null;
-    }
+        @IsDateProperty({ isNullable: true })
+        processed_at?: Date | null;
 
-    /**
-     * Pricing Plan Subscription
-     * - assigned to `tenant_id`
-     * - assigned to `pricing_plan_declaration_id`
-     * - it terminally captures subscription date and cancellation date for the given pricing plan
-     */
-    interface PricingPlanSubscriptionEntity {
-      @IsPrimaryKey()
-      @IsUUID()
-      id: string;
+        @IsDateProperty({ isNullable: true })
+        confirmed_at?: Date | null;
 
-      @IsEnumProperty(PricingPlanSubscriptionStatusEnum)
-      status: PricingPlanSubscriptionStatusEnum;
+        @IsDateProperty({ isNullable: true })
+        cancelled_at?: Date | null;
 
-      @IsForeignKey()
-      @IsStringProperty()
-      tenant_id: string;
+        @IsDateProperty({ isNullable: true })
+        rejected_at?: Date | null;
 
-      @IsForeignKey()
-      @IsStringProperty()
-      pricing_plan_declaration_id: string;
+        @IsDateProperty({ isNullable: true })
+        failed_at?: Date | null;
+      }
 
-      @IsDateProperty()
-      created_at: Date;
-      
-      @IsDateProperty({ isNullable: true })
-      updated_at?: Date | null;
+      /**
+       * Job State Entity
+        */
+      interface JobStateEntity {
+        @IsEnumProperty(JobStatusEnum)
+        status: JobStatusEnum;
+      }
 
-      @IsDateProperty({ isNullable: true })
-      subscribed_at?: Date | null;
+      /**
+       * Job Status
+      */
+      enum JobStatusEnum {
+        Unknown = 0
+        Queued = 1,
+        Processing = 2,
+        Processed = 3,
+        Confirming = 4,
+        Confirmed = 4,
+        Cancelled = 5,
+        Rejected = 6,
+        Failed = 7,
+      }
 
-      @IsDateProperty({ isNullable: true })
-      cancelled_at?: Date | null;
-    }
+      /**
+       * Job Input Entity
+      * - type is a URL, it can by dynamically extended, and shall be progrmatically validated, potentially via dynamic job schema registration procedure
+      */
+      interface JobInputEntity {
+        @IsStringProperty()
+        id: string;
 
-    /**
-     * Supported transitions of pricing plan subscription statuses
-     * - Active → Suspended: Payment failure, compliance issues, manual admin action
-     * - Suspended → Active: Payment resolved, compliance cleared, manual admin action
-     * - Active → Cancelled: Pricing plan cancelled, manual admin action
-     * - Suspended → Cancelled: Pricing plan cancelled, manual admin action
-     */
-    enum PricingPlanSubscriptionStatusEnum {
-      Active = 1,
-      Suspended = 2,
-      Cancelled = 3,
-    }
+        @IsURL()
+        type: string;
 
-    /**
-     * Pricing Plan Quota Usage Event
-     * - type URL examples:
-     *   - {tenant_id}.example.com/{version}/{event_namespace}/{event_id}/{event_type}?{k}={v},{k}={v},{k}={v}
-     *   - example.com/v1/jobs/007/created}?priority=1
-     *   - example.com/v1/jobs/007/completed?compute_ms=10000,compute_bytes=100000
-     *   - example.com/v1/jobs/007/confirmed}?chain_id=666,block_number=999,tx_hash=0x..
-     *   - example.com/v1/jobs/007/failed}?error_code=555,error_message=billable_error_code,compute_ms=10000,compute_bytes=100000
-     */
-    interface PricingPlanQuotaUsageEventEntity {
-      // Common fields
-      @IsPrimaryKey()
-      @IsUUID()
-      id: string;
+        [key: string]: unknown;
+      }
 
-      @IsURL()
-      type: string;
+      /**
+       * Job Output Entity
+        * - Job result/output data
+        * - Can be either Result or ResultDataWithTxReceipt
+        */
+      type JobOutputEntityType = Result | ResultWithTxReceipt;
 
-      @IsForeignKey()
-      @IsStringProperty()
-      tenant_id: string;
+      interface ResultWithTxReceipt {
+        status: boolean
+        data: ResultDataWithTxReceipt;
+        error: ResultError;
+      }
 
-      @IsForeignKey()
-      @IsStringProperty()
-      user_id: string;
+      interface ResultDataWithTxReceipt {
+        tx_receipt: TxReceipt;
+      }
+    ```
 
-      @IsStringProperty()
-      correlation_id: string;
+- **Entities**: *Tenants, Users, and Pricing Plans*
+  
+  - **Scope**
+    - Tenant
+    - User
+    - Pricing Plan Subscription
+    - Pricing Plan Declaration
+    - Pricing Plan Quota
+    - Pricing Plan Quota Usage Event
 
-      @IsDateProperty()
-      created_at: Date;
+  - **Relationships**: 
+    - **One-to-Many**: *Tenant* → *User*
+    - **One-to-One**: *Tenant* → *Pricing Plan Subscription*
+    - **One-to-One**: *Pricing Plan Subscription* → *Pricing Plan Declaration*
+    - **One-to-Many**: *Pricing Plan Declaration* → *Pricing Plan Quota*
+    - **One-to-Many**: *Pricing Plan Quota* → *Pricing Plan Quota Usage Event*
 
-      @IsDateProperty()
-      originated_at: Date;
+  - **Entity Interfaces**
 
-      // Type-dependent: order-bound fields
+    - **Tenant**
+    ```ts
+      /**
+       * Tenant
+        * - gets pricing_plan_subscription_id assigned
+        * - Deleted status is terminal
+        * - captures deletion date
+        */
+      interface TenantEntity {
+        @IsPrimaryKey()
+        @IsUUID()
+        id: string;
+        
+        @IsEnumProperty(TenantTypeEnum)
+        type: TenantTypeEnum;
 
-      @IsStringProperty({ isNullable: true })
-      priority: string | null;
+        @IsEnumProperty(TenantStatusEnum)
+        status: TenantStatusEnum;
 
-      // Type-dependent: resource-bound fields
+        @IsEmailAddressProperty()
+        email_address: string;
 
-      @IsIntegerProperty({ isNullable: true })
-      compute_ms: number | null;
+        @IsStringProperty()
+        name: string;
 
-      @IsIntegerProperty({ isNullable: true })
-      compute_bytes: number | null;
+        @IsForeignKey()
+        @IsStringProperty()
+        pricing_plan_subscription_id?: string;
+        
+        @IsDateProperty()
+        created_at: Date;
+        
+        @IsDateProperty({ isNullable: true })
+        updated_at?: Date | null;
 
-      // Type-dependent: blockchain-bound fields
+        @IsDateProperty({ isNullable: true })
+        deleted_at?: Date | null;
+      }
 
-      @IsIntegerProperty({ isNullable: true })
-      chain_id: number | null;
+      /**
+       * Supported transitions of tenant statuses:
+        * - Active → Suspended: by client or by system admin
+        * - Suspended → Active: by client or by system admin
+        * - Active → Deleted: by client or by system admin (email can be reused)
+        * - Suspended → Deleted: by client or by system admin (email can be reused)
+        */
+      enum TenantStatusEnum {
+        Active = 1,
+        Suspended = 2,
+        Deleted = 3,
+      }
 
-      @IsIntegerProperty({ isNullable: true })
-      block_number: number | null;
+      enum TenantTypeEnum {
+        Individual = 1,
+        Business = 2,
+        Enterprise = 3,
+      }
 
-      @IsStringProperty({ isNullable: true })
-      tx_hash: string | null;
+    ```
 
-      // Type-dependent: timestamp fields
+    - **Pricing Plan Declaration**
+    ```ts
+      /**
+       * Pricing Plan Declaration for tenant subscription
+        * - type is limited to predefined values i.e. dynamic pricing plan extension is not supported
+        */
+      interface PricingPlanDeclarationEntity {
+        @IsPrimaryKey()
+        @IsUUID()
+        id: string;
 
-      @IsDateProperty({ isNullable: true })
-      job_creation_started_at?: Date | null;
+        @IsEnumProperty(PricingPlanTypeEnum)
+        type: PricingPlanTypeEnum;
 
-      @IsDateProperty({ isNullable: true })
-      job_creation_failed_at?: Date | null;
+        @IsDateProperty()
+        created_at: Date;
+        
+        @IsDateProperty({ isNullable: true })
+        updated_at?: Date | null;
+      }
 
-      @IsDateProperty({ isNullable: true })
-      job_creation_completed_at?: Date | null;
+      enum PricingPlanTypeEnum {
+        Free = 1,
+        Starter = 2,
+        Professional = 3,
+        Business = 3,
+        Enterprise = 3,
+      }
+    ```
 
-      @IsDateProperty({ isNullable: true })
-      job_processing_started_at?: Date | null;
+    - **Pricing Plan Quota Declaration**
+    ```ts
+      /**
+      * Pricing Plan Quota Declaration
+        * - type is a URL, it can by dynamically extended, and shall be progrmatically validated
+        * - references `pricing_plan_declaration_id
+        */
+      interface PricingPlanQuotaDeclaration {
+        @IsPrimaryKey()
+        @IsUUID()
+        id: string;
 
-      @IsDateProperty({ isNullable: true })
-      job_processing_failed_at?: Date | null;
+        @IsURL()
+        type: string;
 
-      @IsDateProperty({ isNullable: true })
-      job_processing_completed_at?: Date | null;
+        @IsStringProperty()
+        name: string;
 
-      @IsDateProperty({ isNullable: true })
-      job_confirmation_started_at?: Date | null;
+        @IsStringProperty({ isNotEmpty: false })
+        description: string;
 
-      @IsDateProperty({ isNullable: true })
-      job_confirmation_failed_at?: Date | null;
+        @IsIntegerProperty({ isGreaterThan: 0 })
+        limit: number;
 
-      @IsDateProperty({ isNullable: true })
-      job_confirmation_completed_at?: Date | null;
+        @IsForeignKey()
+        @IsStringProperty()
+        pricing_plan_declaration_id: string;
 
-      // Type-dependent: error-bound fields
+        @IsDateProperty()
+        created_at: Date;
+        
+        @IsDateProperty({ isNullable: true })
+        updated_at?: Date | null;
+      }
+    ```
 
-      @IsIntegerProperty({ isNullable: true })
-      error_code: number | null;
+    - **Pricing Plan Quota Subscription**
+    ```ts
+      /**
+       * Pricing Plan Subscription
+        * - isolated to `tenant_id`
+        * - references `pricing_plan_declaration_id`
+        * - Cancelled status is terminal
+        * - captures subscription date
+        * - captures cancellation date
+        */
+      interface PricingPlanSubscriptionEntity {
+        @IsPrimaryKey()
+        @IsUUID()
+        id: string;
 
-      @IsIntegerProperty({ isNullable: true })
-      error_message: string | null;
-    }
+        @IsEnumProperty(PricingPlanSubscriptionStatusEnum)
+        status: PricingPlanSubscriptionStatusEnum;
+
+        @IsForeignKey()
+        @IsStringProperty()
+        tenant_id: string;
+
+        @IsForeignKey()
+        @IsStringProperty()
+        pricing_plan_declaration_id: string;
+
+        @IsDateProperty()
+        created_at: Date;
+        
+        @IsDateProperty({ isNullable: true })
+        updated_at?: Date | null;
+
+        @IsDateProperty({ isNullable: true })
+        subscribed_at?: Date | null;
+
+        @IsDateProperty({ isNullable: true })
+        cancelled_at?: Date | null;
+      }
+
+      /**
+       * Supported transitions of pricing plan subscription statuses
+        * - Active → Suspended: Payment failure, compliance issues, manual admin action
+        * - Suspended → Active: Payment resolved, compliance cleared, manual admin action
+        * - Active → Cancelled: Pricing plan cancelled, manual admin action
+        * - Suspended → Cancelled: Pricing plan cancelled, manual admin action
+        */
+      enum PricingPlanSubscriptionStatusEnum {
+        Active = 1,
+        Suspended = 2,
+        Cancelled = 3,
+      }
+    ```
+
+    - **Pricing Plan Quota Usage Event**
+    ```ts
+      /**
+       * Pricing Plan Quota Usage Event
+        * - type is a URL, it can by dynamically extended, and shall be progrmatically validated
+        *   - {tenant_id}.example.com/{version}/{event_namespace}/{event_id}/{event_type}?{k}={v},{k}={v},{k}={v}
+        *   - example.com/v1/jobs/007/created}?priority=1
+        *   - example.com/v1/jobs/007/completed?compute_ms=10000,compute_bytes=100000
+        *   - example.com/v1/jobs/007/confirmed}?tx_receipt=0x..
+        *   - example.com/v1/jobs/007/failed}?error_code=999,error_message="..."
+        */
+      interface PricingPlanQuotaUsageEventBaseEntity {
+        // Common fields
+        @IsPrimaryKey()
+        @IsUUID()
+        id: string;
+
+        @IsURL()
+        type: string;
+
+        @IsForeignKey()
+        @IsStringProperty()
+        tenant_id: string;
+
+        @IsForeignKey()
+        @IsStringProperty()
+        user_id: string;
+
+        @IsStringProperty()
+        correlation_id: string;
+
+        @IsDateProperty()
+        created_at: Date;
+
+        @IsDateProperty()
+        originated_at: Date;
+      }
+
+      interface PricingPlanQuotaUsageEventBaseEntity extends PricingPlanQuotaUsageEventBaseEntity {
+        // Type-dependent: order-bound fields
+
+        @IsStringProperty({ isNullable: true })
+        priority: string | null;
+
+        // Type-dependent: resource-bound fields
+
+        @IsIntegerProperty({ isNullable: true })
+        compute_ms: number | null;
+
+        @IsIntegerProperty({ isNullable: true })
+        compute_bytes: number | null;
+
+        // Type-dependent: blockchain-bound fields
+
+        @IsStringProperty({ isNullable: true })
+        tx_receipt: string | null;
+
+        // Type-dependent: timestamp fields
+
+        @IsDateProperty({ isNullable: true })
+        job_creation_started_at?: Date | null;
+
+        @IsDateProperty({ isNullable: true })
+        job_creation_failed_at?: Date | null;
+
+        @IsDateProperty({ isNullable: true })
+        job_creation_completed_at?: Date | null;
+
+        @IsDateProperty({ isNullable: true })
+        job_processing_started_at?: Date | null;
+
+        @IsDateProperty({ isNullable: true })
+        job_processing_failed_at?: Date | null;
+
+        @IsDateProperty({ isNullable: true })
+        job_processing_completed_at?: Date | null;
+
+        @IsDateProperty({ isNullable: true })
+        job_confirmation_started_at?: Date | null;
+
+        @IsDateProperty({ isNullable: true })
+        job_confirmation_failed_at?: Date | null;
+
+        @IsDateProperty({ isNullable: true })
+        job_confirmation_completed_at?: Date | null;
+
+        // Type-dependent: error-bound fields
+
+        @IsIntegerProperty({ isNullable: true })
+        error_code: number | null;
+
+        @IsIntegerProperty({ isNullable: true })
+        error_message: string | null;
+      }
+      ``` 
 
 - **Billing Metric Types**:
   - **job_creation_started**: Job creation started
