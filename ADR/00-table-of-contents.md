@@ -1,4 +1,4 @@
-# Architecture Decision Records (ADR) - Table of Contents
+# Table of Contents
 
 ## Overview
 This document provides a comprehensive overview of all Architecture Decision Records (ADRs) for the Zama Jobs Platform. Each ADR documents a significant architectural decision, the context in which it was made, and the consequences of that decision.
