@@ -41,7 +41,6 @@
 
 ## 2. Error Budget Policy
 
-|------------------|----------------|---------------|------------------------------------|------------------------|--------------------------------|-------------------|
 | **Option**       | **Err Budget** | **Burn Rate** | **Response Actions**               | **Pros**               | **Cons**                       | **Best For**      |
 |------------------|----------------|---------------|------------------------------------|------------------------|--------------------------------|-------------------|
 | *Zero-Tolerance* | 0.05% (4.4h/y) | 1.2x, 2x      | Immediate restrictions (freeze)    | Max reliability        | Restrictive, kills innovation  | Financial systems |
@@ -50,7 +49,6 @@
 | *Growth-First*   | 0.2% (17.5h/y) | 2x, 4x        | Min restrictions, focus on scaling | Optimized for growth   | Higher error rates acceptable  | Startups          |
 | *Aggressive*     | 0.3% (26.3h/y) | 2x, 5x        | Min restrictions, focus on fixes   | Rapid iteration        | Higher risk tolerance          | Internal services |
 | *Adaptive*       | 0.1%→0.05%     | 1.5x, 3x, 6x  | Start loose, tighten as matures    | Data-driven            | Complex to implement           | New services      |
-|------------------|----------------|---------------|------------------------------------|------------------------|--------------------------------|-------------------|
 
 - **Error Budget Definition** *(Moderate Approach for New Service)*:
   - **HIGH Criticality** (50% buffer): 0.1% error budget (8.77 hours/year) - *Zero tolerance for SLO violations during critical launch phase*
@@ -206,7 +204,6 @@
   - **Performance + Error**: 15-minute escalation (P1 technical priority)
   - **Business + Customer**: 15-minute escalation (P1 impact priority)
 
-|-------------------------|------------------------|-----------------------|-------------------|--------------------|-------------------|
 | **Trigger Type**        | **Level 1**            | **Level 2**           | **Level 3**       | **Level 4**        | **Response Time** |
 |-------------------------|------------------------|-----------------------|-------------------|--------------------|-------------------|
 | **Time Trigger**        | 24h → On-call SWE      | 48h → Senior SWE      | 72h → Manager     | 96h+ → CTO/VP      | IMMEDIATE         |
@@ -216,7 +213,6 @@
 | **Response Time**       | >500ms → On-call SWE   | >1s → Senior SWE      | >2s → Manager     | >5s → CTO/VP       | 30m/15m/15m/15m   |
 | **Error Rate**          | >0.8% → On-call SWE    | >1.0% → Senior SWE    | >1.2% → Manager   | >1.5% → CTO/VP     | 30m/15m/15m/15m   |
 | **Availability**        | <99.9% → On-call SWE   | <99.5% → Senior SWE   | <99.0% → Manager  | <95% → CTO/VP      | 30m/15m/15m/15m   |
-|-------------------------|------------------------|-----------------------|-------------------|--------------------|-------------------|
 
 - **Escalation Level Actions**:
 
@@ -508,23 +504,19 @@
 
 ##### **Business Criticality**: *Market Benchmarks* for *Levels*, *Buffer Ranges*, and *Buffer Median*
 
-|------------------------|-----------------------------|--------------------------------|-----------------------------|
 | **Source**             | **HIGH**: *Rang* / *Median* | **MEDIUM**: *Range* / *Median* | **LOW**: *Range* / *Median* |
 |------------------------|-----------------------------|--------------------------------|-----------------------------|
 | *Google SRE*           | 40-50% / 45%                | 25-35% / 30%                   | 0-15% / 7.5%                |
 | *Netflix SRE*          | 45-55% / 50%                | 30-35% / 37.5%                 | 5-15% / 10%                 |
 | *AWS Well-Architected* | 40-50% / 45%                | 25-30% / 27.5%                 | 0-10% / 5%                  |
-|------------------------|-----------------------------|--------------------------------|-----------------------------|
 
 ##### **Business Criticality**: *Our Guidelines*
 
-|-------------------|----------|------------|---------|----------------------------------------------------------------------------------------------------------|
 | **Buffer Type**   | **HIGH** | **MEDIUM** | **LOW** | **Use Case**                                                                                             |
 |-------------------|----------|------------|---------|----------------------------------------------------------------------------------------------------------|
 | **Buffer Lower**  | 40%      | 25%        | 0%      | **Cost-Optimized** - Mature systems, predictable load, budget constraints, acceptable SLO violation risk |
 | **Buffer Median** | 45%      | 30%        | 7.5%    | **Standard Production** - Balanced risk/reward, most common use case, recommended default                |
 | **Buffer Upper**  | 50%      | 35%        | 15%     | **Safety-Critical** - New systems, unpredictable load, zero tolerance for SLO violations                 |
-|-------------------|----------|------------|---------|----------------------------------------------------------------------------------------------------------|
 
 **Chosen Business Criticality Buffer**: *Buffer Upper* (50%/35%/15%)
   - **Rationale**:
@@ -539,7 +531,6 @@
   4. **Refine SLOs** based on measured values and business requirements
   5. **Re-validate** quarterly with new data for continuous optimization
 
-|-------------------------------|------------|------------------|------------------------------------------------------------------------------------------------------------|
 | **Step**                      | **Metric** |  **Formula**     | **Description**                                                                                            |
 |-------------------------------|------------|------------------|------------------------------------------------------------------------------------------------------------|
 | **1. Measure p0 latency**     | *p0*       | [measured_prod]  | **Fastest response time** - Best case performance, represents optimal system conditions                    |
@@ -550,12 +541,10 @@
 | **6. Measure p100 latency**   | *p100*     | [measured_prod]  | **Slowest response time** - Worst case performance, represents system under stress conditions              |
 | **8. Biz Criticality Buffer** | *BCB*      | *Buffer Upper*   | **Biz risk tolerance** - Buffer picked based on system maturity, load predictability, biz impact tolerance |
 | **9. Define p95 SLO Target**  | *p95*      | p100 × (1 + BCB) | **SLO target with safety margin** - Conservative estimate for new service launch with biz risk protection  |
-|-------------------------------|------------|------------------|------------------------------------------------------------------------------------------------------------|
 
 
 ##### **Business Criticality**: *Classification Decision Matrix*:
 
-|-------------------------|-----------------------------------|--------------------------------|--------------------------------|
 | **Factor**              | Level: **HIGH** *(40-55%)*        | Level: **MEDIUM** *(25-35%)*   | Level: **LOW** *(0-15%)*       |
 |-------------------------|-----------------------------------|--------------------------------|--------------------------------|
 | **Customer Impact**     | ✅ Direct customer interaction    | ⚠️ Limited customer interaction | ❌ No customer interaction     |
@@ -567,7 +556,6 @@
 | **SLA Requirements**    | 📋 Strict SLA compliance          | 📄 Standard SLA compliance      | 📝 No SLA requirements         |
 | **Incident Response**   | 🚨 Immediate response                 | 📞 Standard response            | 📧 Low priority response       |
 | **Monitoring Priority** | 🔴 Critical alerts                | 🟡 Standard monitoring          | 🟢 Basic monitoring            |
-|-------------------------|-----------------------------------|--------------------------------|--------------------------------|
 
 ##### **Business Criticality**: *Classification Decision Tree*
 
@@ -590,7 +578,6 @@
 
 ##### **Business Criticality**: *API Endpoint Classification*
 
-|--------------------------------------|-----------|------------|---------------------------------------------------------------------------------------------|
 | **Endpoint**                         | **Level** | **Buffer** | **Justification**                                                                           |
 |--------------------------------------|-----------|------------|---------------------------------------------------------------------------------------------|
 | *GET* **/system/health**             | LOW       | 15%        | ❌ No customer interaction + ❌ No revenue impact + 🏠 Internal service                      |
@@ -617,12 +604,10 @@
 |--------------------------------------|-----------|------------|---------------------------------------------------------------------------------------------|
 | *GET*  **/analytics/usage**          | *MEDIUM*  | *35%*      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 📊 Standard business data    |
 | *GET* **/analytics/reports**         | *MEDIUM*  | *35%*      | ⚠️ Limited customer interaction + ⚠️ Indirect revenue support + 📊 Standard business data    |
-|--------------------------------------|-----------|------------|---------------------------------------------------------------------------------------------|
 
 
 ##### **API Endpoint Latency Measurements (p0/p50/p99/100)** + **Estimated** *p95* **Targets**:
 
-|--------------------------------------|-----------|------------|------------------------------------------------|
 | **Endpoint**                         | **Level** | **Buffer** | **p0** | **50** | **99** | **100** | **p95**   |
 |--------------------------------------|-----------|------------|------------------------------------------------|
 | *GET* **/system/health**             | LOW       | 15%        |        |        |        |         | **50ms**  |
@@ -648,14 +633,12 @@
 |--------------------------------------|-----------|------------|------------------------------------------------|
 | *GET*  **/analytics/usage**          | *MEDIUM*  | *35%*      |        |        |        |         | **200ms** |
 | *GET* **/analytics/reports**         | *MEDIUM*  | *35%*      |        |        |        |         | **250ms** |
-|--------------------------------------|-----------|------------|------------------------------------------------|
 
 
 ---
 
 ## 5. Alerting
 
-|------------------------------|--------------|-------------------|--------------|------------------------|------------------------------|
 | **Metric**                   | **Severity** | **Threshold**     | **Duration** | **Response**           | **Business Impact**          |
 |------------------------------|--------------|-------------------|--------------|------------------------|------------------------------|
 | **Error Rate**               | Critical     | > 0.1%            | 2 minutes    | Immediate response     | User experience degraded     |
@@ -739,7 +722,6 @@
 |------------------------------|--------------|-------------------|--------------|------------------------|------------------------------|
 | **Event Processing Lag**     | Critical     | > 5 minutes       | 1 minute     | Immediate response     | Event processing backlog     |
 | **Event Processing Lag**     | Warning      | > 2 minutes       | 3 minutes    | Monitor events         | Event processing slow        |
-|------------------------------|--------------|-------------------|--------------|------------------------|------------------------------|
 
 
 ---
