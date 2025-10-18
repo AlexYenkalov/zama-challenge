@@ -1,0 +1,116 @@
+# API Handler Logic
+
+## Table of Contents
+
+### 1. Execution Duration
+- [Handler Duration Overview](#handler-duration-overview)
+
+### 2. Handler Execution Flows
+- [Job Creation Handler](#job-creation-handler)
+- [Job Processing Handler](#job-processing-handler)
+- [Job Confirmation Send Handler](#job-confirmation-send-handler)
+- [Job Confirmation Capture Orchestrator](#job-confirmation-capture-orchestrator)
+- [Job Confirmation Capture Handler](#job-confirmation-capture-handler)
+- [Job Reconciliation Handler](#job-reconciliation-handler)
+
+---
+
+## 1. Execution Duration
+- `job creation` - *up to 1 second*; simple db writes and event publishing;
+- `job processing` - *from few seconds to minutes or hours*; job task dependent;
+- `job confirmation send` - *up to few seconds*; blockchain tx signing;
+- `job confirmation capture` - *up to 1 second*; simple db writes and event publishing;
+- `job reconciliation` - *up to 1 second*; simple event publishing;
+
+---
+
+## 2. Handler Execution Flows
+- `job-creation` handler:
+    - *record telemetry*
+    - **biz logic**
+    - ✅ on success; **submitting a single transaction to AWS EventBridge**:
+        - publish message: `record metrics`
+        - publish message: `send job status`
+        - publish message: `start job processing`
+        - *record telemetry*
+    - ❌ on error; **submitting a single transaction to AWS EventBridge**:
+        - publish message: `record metrics`
+        - publish message: `send job status`
+        - *record telemetry*
+        - handle retry **(error-context policies apply)**
+        - return HTTP error
+- `job-processing` handler:
+    - *record telemetry*
+    - **biz logic**
+    - ✅ on success; **submitting a single transaction to AWS EventBridge**:
+        - publish message: `record metrics`
+        - publish message: `send job status`
+        - publish message: `send job output`
+        - publish message: `start job confirmation`
+        - *record telemetry*
+    - ❌ on error; **submitting a single transaction to AWS EventBridge**:
+        - publish message: `record metrics`
+        - publish message: `send job status`
+        - *record telemetry*
+        - handle retry **(error-context policies apply)**
+- `job-confirmation-send` handler:
+    - *record telemetry*
+    - **biz logic**
+      - (...)
+      - generate tx
+      - sign tx
+      - send tx
+      - validate RPC response
+      - (...)
+    - ✅ on success; **submitting a single transaction to AWS EventBridge**:
+        - publish message: `record metrics`
+        - publish message: `send job status`
+        - publish message: `tx submitted`
+          - triggers `job-confirmation-capture-orchestrator` handler to
+        - *record telemetry*
+    - ❌ on error; **submitting a single transaction to AWS EventBridge**:
+        - publish message: `record metrics`
+        - publish message: `send job status`
+        - *record telemetry*
+        - handle retry **(error-context policies apply)**
+            - potentially blocking error due to *ordering requirement*
+            - *manual intervention* may be required to review, resolve and resume
+- `job-confirmation-capture-orchestrator` handler
+    - *record telemetry*
+    - check if `job-confirmation-capture` handler is running, if not, then spawn one
+    - ✅ on success; **submitting a single transaction to AWS EventBridge**:
+        - *record telemetry*
+    - ❌ on error; **submitting a single transaction to AWS EventBridge**:
+        - *record telemetry*
+        - handle retry **(error-context policies apply)**
+- `job-confirmation-capture` handler:
+    - *record telemetry*
+    - **biz logic**
+      - (...)
+      - subscribe for contract events for *real-time event processing*
+      - preiodically (e.g. X hours) execute *event replay* for the last Y hours to capture yet unprocessed events which were missed due to potential issues
+      - (...)
+    - ✅ on success; **submitting a single transaction to AWS EventBridge**:
+        - publish message: `record metrics`
+        - publish message: `send job status`
+        - trigger job confirmation output delivery flow
+        - *record telemetry*
+    - ❌ on error; **submitting a single transaction to AWS EventBridge**:
+        - publish message: `record metrics`
+        - publish message: `send job status`
+        - *record telemetry*
+        - handle retry **(error-context policies apply)**
+- `job-reconciliation` handler
+    - *record telemetry*
+    - query to identify failed jobs that stuck in DLQ
+    - filter jobs based of *request.body.errors_allowed_to_retry* array
+    - publish messages:
+        - `start job processing`
+        - `start job confirmation`
+    - ✅ on success; **submitting a single transaction to AWS EventBridge**:
+        - publish message: `record metrics`
+        - *record telemetry*
+    - ❌ on error; **submitting a single transaction to AWS EventBridge**:
+        - publish message: `record metrics`
+        - *record telemetry*
+        - handle retry **(error-context policies apply)**

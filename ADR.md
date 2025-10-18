@@ -3232,7 +3232,7 @@ This approach maximizes security, privacy, and user trust while allowing for fut
 
 ### Security
 
-### Options Considered for `Authentication & Authorization`
+**Options Considered for Authentication & Authorization**
 
 | **Option** | **Initial Setup** | **Cost** | **Security** | **Access Management** | **Identity Sources** | **Maintenance** | **Compliance** | **Audit Logging** |
 |------------|------------------|----------|-------------|---------------------|-------------------|-----------------|-------------------|-------------|
@@ -3242,7 +3242,7 @@ This approach maximizes security, privacy, and user trust while allowing for fut
 | **HMAC API Keys** | ✅ Simple (Custom implementation) | ✅ Low (infrastructure hosting only) | ✅ High (HMAC signatures, replay protection, tamper detection, non-repudiation) | ❌ Low (no user context) | ❌ N/A (no identity sources, just API keys) | ⚠️ Medium (custom key management, manual rotation) | ❌ Low (no compliance features, extensive custom work required) | ❌ N/A (manual implementation required) |
 | **Better-Auth API Keys** | ✅ Simple (Better-Auth library integration) | ✅ Low (infrastructure hosting only) | ⚠️ Medium (API keys, rate limiting, expiration, no HMAC/replay protection) | ⚠️ Medium (scopes, custom metadata, user context, but API key level not full OAuth 2.0) | ❌ N/A (no identity sources, just API keys) | ✅ Simple (Better-Auth handles key management, user management) | ❌ Low (no compliance certifications yet) | ❌ N/A (not in-built yet, manual implementation required) |
 
-### Options Considered for `Multi-Factor Authentication (MFA)`
+**Options Considered for Multi-Factor Authentication (MFA)**
 
 | **Option** | **Initial Setup** | **Cost** | **Security** | **Maintenance** | **Compliance** | **Audit Logging** |
 |------------|------------------|----------|-------------|-----------------|-------------------|-------------|
@@ -3254,7 +3254,7 @@ This approach maximizes security, privacy, and user trust while allowing for fut
 | **MFA with Hardware Tokens** | ⚠️ Medium (hardware distribution, setup) | ⚠️ Medium (hardware costs per token) | ✅ High (hardware-based, offline security) | ⚠️ Medium (hardware management, distribution) | ✅ High (NIST recommended for high-security applications) | ✅ High (standard MFA audit logging) |
 
 **Note**
-*Chosen optiona and ratonale are mtioned above* at **Platform Policies (Gateway)**: **Authentication** + **Authorization**
+Chosen option and ratonale are mentioned inside of **07-platform-policies**
 
 
 <!-- ### Operational Excellence
@@ -3328,13 +3328,3 @@ This approach maximizes security, privacy, and user trust while allowing for fut
 - **Quality Impact**: [How did AI assistance impact the quality and speed of the design? What were the trade-offs?]
 - **Best Practices**: [What patterns emerged for effective AI tool usage? What would you recommend to others?]
 - **Tool Selection**: [Which AI tools were most valuable for different aspects of the design? Why?] -->
-
----
-
-## Appendix
-
-### OpenAPI Specification
-**TODO: Reference OpenAPI spec**
-- Link to openapi.yaml file
-- Key endpoints and examples
-- Error response schemas
