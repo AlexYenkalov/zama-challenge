@@ -15,27 +15,20 @@
   - **Trustless (Immutable) Contracts:**
     - Pros
       - ✅ **Security**: No admin keys or upgrade exploits  
-      - ✅ **User Trust**: No central authority control  
-      - ✅ **Privacy**: No admin access to job data  
-      - ✅ **Gas Efficiency**: 5,700 gas per confirmation (minimal overhead)  
-      - ✅ **Regulatory Compliance**: Immutable privacy guarantees  
-      - ✅ **Audit Transparency**: All code visible and immutable  
+      - ✅ **User Trust**: No central authority control
       - ✅ **Decentralization**: No single point of failure  
       - ✅ **Cost**: Lower deployment and maintenance costs  
     - Cons
       - ❌ **No Bug Fixes**: Cannot fix bugs after deployment  
       - ❌ **No Feature Updates**: Cannot add new functionality  
       - ❌ **Migration Required**: Need new contract for changes  
-      - ❌ **Data Loss**: Cannot migrate existing data  
 
   - **Upgradeable Contracts (Proxy Pattern):**
     - Pros
       - ✅ **Bug Fixes**: Can fix bugs after deployment  
       - ✅ **Feature Updates**: Can add new functionality  
       - ✅ **No Migration**: Same contract address  
-      - ✅ **Data Preservation**: Existing data remains  
     - Cons
-      - ❌ **Gas Overhead**: ~2,100 gas per call (proxy overhead)  
       - ❌ **Admin Risk**: Admin can upgrade (centralization)  
       - ❌ **Trust Required**: Requires trust in admin  
       - ❌ **Complexity**: More complex to audit and deploy  
@@ -43,35 +36,23 @@
       - ❌ **Cost**: Higher deployment and maintenance costs  
 
 - **Trade-offs**:
-  - **Simplicity vs Flexibility**
-  - **Security vs Upgradability**
+  - **User Simplicity vs Developer Flexibility**
+  - **Contract Security vs Developer Flexibility**
+  - **Contract Security vs Maintenance Cost**
 
 - **Chosen Approach**: `Trustless (Immutable) Contracts`
   - **Rationale**:
-    - Security-first with modular design for different functions
-    - For a privacy-preserving job confirmation system, trustless contracts provide superior security, user trust, and regulatory compliance. The migration strategy allows for future enhancements while maintaining immutability benefits.
+    - For on-chain security and data privacy, I assume the highest possible level by default and only consider scaling back if a business case justifies it within a proper risk management framework.
 
 - **Recommended Approach for Jobs API:**
   1. **Phase 1 (MVP)**: Deploy trustless V1 contract
   2. **Phase 2 (Production)**: Deploy trustless V2 with enhancements
   3. **Phase 3 (Scale)**: Deploy trustless V3 with advanced features
 
-- **Migration Strategy Benefits:**
-  - ✅ **Clean Slate**: Each version is fully audited and immutable  
-  - ✅ **User Choice**: Users can choose which version to use  
-  - ✅ **No Forced Upgrades**: Users control their migration  
-  - ✅ **Proven Security**: Each version is battle-tested  
-  - ✅ **Regulatory Compliance**: Immutable privacy guarantees  
-  - ✅ **Future-Proof**: Can add features without compromising security  
-
 
 ---
 
 ## 2. Security Considerations
-
-**Chosen Approach**: **AccessControl + Pausable Pattern**
-
-**Rationale**: For a production job confirmation system, we need both role-based access control and emergency stop capability. The AccessControl pattern provides secure, audited permission management, while Pausable enables immediate response to security incidents. Timelock provides governance delay for admin functions but adds complexity for MVP, making it suitable for future upgrades when governance is needed.
 
 - **Access Control Patterns Considered:**
 
@@ -107,12 +88,15 @@
     - ❌ **Governance overhead**: Requires community coordination
 
 - **Security Trade-offs**:
-  - **Complexity vs Security**
+  - **Security vs Complexity**
   - **Centralization vs Decentralization**
 
 - **Security Benefits:**
   - ✅ **Role-based access**: Only authorized confirmers can confirm jobs
   - ✅ **Emergency stop**: Can pause contract if security issue found
+
+**Chosen Approach**: `AccessControl + Pausable Pattern`
+  - **Rationale**: In order to fulfill current security requirements we shall consider using a role-based access control and emergency stop capability. The AccessControl pattern provides secure, audited permission management, while Pausable enables immediate response to security incidents. As for the Timelock, which provides governance delay for admin functions, it can be considered during future upgrades when stronger governance is justified.
 
 
 ---
@@ -690,7 +674,6 @@
 
   - **Per Single Transaction by implementation options**
 
-    |---------------|------------|-----------------|----------------|------------|
     | Blockchain    | EventOnly  | EventAndMapping | EventAndStruct | Batch      |
     |---------------|------------|-----------------|----------------|------------|
     | **Polygon**   | $0.17      | $0.71           | $0.83          | $0.04      |
@@ -703,11 +686,9 @@
     | **BSC**       | $1.01      | $4.03           | $4.70          | $0.24      | 
     | **Fantom**    | $0.27      | $1.08           | $1.26          | $0.06      |
     | **Ethereum**  | $54.50     | $223.45         | $260.69        | $13.25     | 
-    |---------------|------------|-----------------|----------------|------------|
 
   - **For 1M Jobs by implementation options**
 
-    |---------------|------------|-----------------|----------------|------------|------------|-------------|
     | Blockchain    | EventOnly  | EventAndMapping | EventAndStruct | Batch(10)  | Batch(100) | Batch(1000) |
     |---------------|------------|-----------------|----------------|------------|------------|-------------|
     | **Polygon**   | $170,000   | $710,000        | $830,000       | $17,000    | $4,000     | $400        |
@@ -720,15 +701,12 @@
     | **BSC**       | $1,010,000 | $4,030,000      | $4,700,000     | $101,000   | $24,000    | $2,400      |
     | **Fantom**    | $270,000   | $1,080,000      | $1,260,000     | $27,000    | $6,000     | $600        |
     | **Ethereum**  | $54,500,000| $223,450,000    | $260,690,000   | $5,450,000 | $1,325,000 | $132,500    |
-    |---------------|------------|-----------------|----------------|------------|------------|-------------|
 
 
 - **Trade-offs**:
-  - **Trustless Deployment vs Upgradability**
-  - **Trustless Deployment vs Pausability**
-  - **Ultra-low Cost vs On-chain State Checks**
-  - **Permissionless vs Access Control**
-
+  - **On-chain State Checks vs Privacy (Correlation Risk)**
+  - **On-chain State Checks vs Lower Cost (Price per On-chain Transaction)**
+  - **Added Complexity (Batching) vs Lower Cost (Price per Job)**
 
 - **Chosen Approach**: `Batch Job Confirmation Strategy with multiple deployments with security features tailored per use-case`
   - **Primary Strategy**: BatchJobConfirmation (23,950 gas per batch) for high-volume operations
