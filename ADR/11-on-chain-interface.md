@@ -672,35 +672,48 @@
 
 - **Multi-Chain Cost Analysis**
 
+  - **Gas Cost Breakdown by Implementation**:
+    - **EventOnly**: 6,450 gas (CALL: 2,100 + SLOAD: 2,100 + validation: 200 + LOG3: 1,750 + execution: 300)
+    - **EventAndMapping**: 26,450 gas (CALL: 2,100 + SLOAD: 2,100 + SSTORE: 20,000 + LOG3: 1,750 + execution: 500)
+    - **EventAndStruct**: 30,850 gas (CALL: 2,100 + SLOAD: 2,100 + SLOAD: 2,100 + SLOAD: 2,100 + SSTORE: 20,000 + LOG3: 1,750 + execution: 700)
+    - **Batch**: 23,950 gas per batch (CALL: 2,100 + validation: 100 + SSTORE: 20,000 + LOG3: 1,750 + execution: 200)
+    - **Batch per Job**: 23,950 gas/job (1 job), 2,395 gas/job (10 jobs), 240 gas/job (100 jobs), 24 gas/job (1000 jobs)
+
+  - **Cost Calculation Formula**:
+    - **Single Transaction**: Cost = Gas × Gas Price (gwei) × 1e-9 (gwei to ETH) × ETH Price
+    - **1M Jobs**: Cost = Gas per Job × Gas Price (gwei) × 0.001 (for 1M jobs)
+    - **Example (Polygon, 30 gwei)**: EventOnly = 6,450 × 30 × 1e-9 = $0.194
+    - **Example (Polygon, 30 gwei, 1M jobs)**: EventOnly = 6,450 × 30 × 0.001 = $194,000
+
   - **Per Single Transaction by implementation options**
 
-    | Blockchain    | EventOnly  | EventAndMapping | EventAndStruct | Batch      |
-    |---------------|------------|-----------------|----------------|------------|
-    | **Polygon**   | $0.17      | $0.71           | $0.83          | $0.04      |
-    | **Harmony**   | $0.13      | $0.53           | $0.62          | $0.03      |
-    | **Huobi**     | $0.13      | $0.53           | $0.62          | $0.03      |
-    | **KuCoin**    | $0.13      | $0.53           | $0.62          | $0.03      |
-    | **Cronos**    | $0.13      | $0.53           | $0.62          | $0.03      |
-    | **Moonriver** | $0.13      | $0.53           | $0.62          | $0.03      |
-    | **Avalanche** | $0.59      | $2.35           | $2.74          | $0.14      | 
-    | **BSC**       | $1.01      | $4.03           | $4.70          | $0.24      | 
-    | **Fantom**    | $0.27      | $1.08           | $1.26          | $0.06      |
-    | **Ethereum**  | $54.50     | $223.45         | $260.69        | $13.25     | 
+    | Blockchain    | Gas Price<br/>*(gwei)* | EventOnly<br/>*(6,450 gas)* | EventAndMapping<br/>*(26,450 gas)* | EventAndStruct<br/>*(30,850 gas)* | Batch<br/>*(23,950 gas)* |
+    |---------------|------------|------------|-----------------|----------------|------------|
+    | **Polygon**   | 30         | $0.194          | $0.794         | $0.925     | $0.719     |
+    | **Harmony**   | 1          | $0.006          | $0.026         | $0.031     | $0.024     |
+    | **Huobi**     | 1          | $0.006          | $0.026         | $0.031     | $0.024     |
+    | **KuCoin**    | 1          | $0.006          | $0.026         | $0.031     | $0.024     |
+    | **Cronos**    | 1          | $0.006          | $0.026         | $0.031     | $0.024     |
+    | **Moonriver** | 1          | $0.006          | $0.026         | $0.031     | $0.024     |
+    | **Avalanche** | 25         | $0.161          | $0.661         | $0.771     | $0.599     | 
+    | **BSC**       | 5          | $0.032          | $0.132         | $0.154     | $0.120     | 
+    | **Fantom**    | 1          | $0.006          | $0.026         | $0.031     | $0.024     |
+    | **Ethereum**  | 20         | $0.129          | $0.529         | $0.617     | $0.479     | 
 
   - **For 1M Jobs by implementation options**
 
-    | Blockchain    | EventOnly  | EventAndMapping | EventAndStruct | Batch(10)  | Batch(100) | Batch(1000) |
-    |---------------|------------|-----------------|----------------|------------|------------|-------------|
-    | **Polygon**   | $170,000   | $710,000        | $830,000       | $17,000    | $4,000     | $400        |
-    | **Harmony**   | $130,000   | $530,000        | $620,000       | $13,000    | $3,000     | $300        |
-    | **Huobi**     | $130,000   | $530,000        | $620,000       | $13,000    | $3,000     | $300        |
-    | **KuCoin**    | $130,000   | $530,000        | $620,000       | $13,000    | $3,000     | $300        |
-    | **Cronos**    | $130,000   | $530,000        | $620,000       | $13,000    | $3,000     | $300        |
-    | **Moonriver** | $130,000   | $530,000        | $620,000       | $13,000    | $3,000     | $300        |
-    | **Avalanche** | $590,000   | $2,350,000      | $2,740,000     | $59,000    | $14,000    | $1,400      |
-    | **BSC**       | $1,010,000 | $4,030,000      | $4,700,000     | $101,000   | $24,000    | $2,400      |
-    | **Fantom**    | $270,000   | $1,080,000      | $1,260,000     | $27,000    | $6,000     | $600        |
-    | **Ethereum**  | $54,500,000| $223,450,000    | $260,690,000   | $5,450,000 | $1,325,000 | $132,500    |
+    | Blockchain    | Gas Price<br/>*(gwei)* | EventOnly<br/>*(6,450 gas/job)* | EventAndMapping<br/>*(26,450 gas/job)* | EventAndStruct<br/>*(30,850 gas/job)* | Batch(1)<br/>*(23,950 gas/job)* | Batch(10)<br/>*(2,395 gas/job)* | Batch(100)<br/>*(240 gas/job)* | Batch(1000)<br/>*(24 gas/job)* |
+    |---------------|------------|------------|-----------------|----------------|------------|------------|------------|-------------|
+    | **Polygon**   | 30         | $194,000        | $808,000       | $944,000   | $718,000   | $71,800     | $7,180      | $718        |
+    | **Harmony**   | 1          | $6,450          | $26,450        | $30,850    | $23,950    | $2,395      | $240        | $24         |
+    | **Huobi**     | 1          | $6,450          | $26,450        | $30,850    | $23,950    | $2,395      | $240        | $24         |
+    | **KuCoin**    | 1          | $6,450          | $26,450        | $30,850    | $23,950    | $2,395      | $240        | $24         |
+    | **Cronos**    | 1          | $6,450          | $26,450        | $30,850    | $23,950    | $2,395      | $240        | $24         |
+    | **Moonriver** | 1          | $6,450          | $26,450        | $30,850    | $23,950    | $2,395      | $240        | $24         |
+    | **Avalanche** | 25         | $161,250        | $661,250       | $771,250   | $598,750   | $59,875     | $5,988      | $599        |
+    | **BSC**       | 5          | $32,250         | $132,250       | $154,250   | $119,750   | $11,975     | $1,198      | $120        |
+    | **Fantom**    | 1          | $6,450          | $26,450        | $30,850    | $23,950    | $2,395      | $240        | $24         |
+    | **Ethereum**  | 20         | $129,000        | $529,000       | $617,000   | $479,000   | $47,900     | $4,790      | $479        |
 
 
 - **Trade-offs**:
@@ -712,16 +725,15 @@
   - **Primary Strategy**: BatchJobConfirmation (23,950 gas per batch) for high-volume operations
   - **Rationale:**
     - `Gas Efficiency`:
-      - 35% cost savings vs EventOnly with batch processing
-      - **$65 (on Polygon)** vs **$3.9M (on Ethereum)** for **1M transactions**
-      - Optimal for high-volume applications (100+ jobs per batch)
-    - `Functionality`: 
-      - Batch confirmation for high-volume operations
+      - Batch with X Jobs vs X Individual EventOnly Job
+        - 10 jobs = 63% cost savings
+        - 100 jobs = 96% cost savings
+        - 1000 jobs = 99,99% cost savings
+      - Batch with X Jobs vs X Individual EventAndMapping Job
+        - 10 jobs = 91% cost savings
+        - 100 jobs = 99% cost savings
+        - 1000 jobs = 99,99% cost savings
     - `Scalability`:
       - Maximum cost efficiency for high-volume applications
-      - **0.1T transactions** at the cost of **$6.5K (on Polygon)**
     - `Trustless Deployment`:
-      - **Contract Simplicity**: Batch-optimized contracts with clear separation of concerns
       - **Contract Security**: No upgrade mechanisms, ensuring contract finality and security
-      - **Compliance**: Immutable contracts provide audit trail and regulatory compliance benefits
-      - **Cost Efficiency**: Batch processing reduces gas costs by 35% for high-volume operations
