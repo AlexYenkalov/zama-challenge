@@ -15,10 +15,29 @@
 
   - **Entity Interfaces**
 
-    - **Problem Detail (ERC 9...)**
+    - **Problem Detail (ERC 7807)**
     ```ts
     interface ProblemDetail {
-      // TODO
+      // HTTP status code
+      status: number;
+
+      // A brief, human-readable summary of the problem type
+      title: string;
+
+      // A URI identifier that categorizes the error
+      type?: string;
+
+      // A human-readable explanation specific to this occurrence
+      detail?: string;
+
+      // A URI reference that identifies the specific occurrence
+      instance?: string;
+
+      // Extensions i.e. additional custom properties
+      code?: string; 
+      params?: [],
+      requestId?: string;
+      retryAfterSeconds?: number;
     }
     ```
 
@@ -45,15 +64,16 @@
     ```ts
       /**
        * Job Entity
+        * - type is a URL, it can by dynamically extended, and shall be progrmatically validated
         * - References tenant_id and author_id (user_id)
-        * - Tracks job lifecycle from creation to completion
+        * - Tracks job lifecycle from creation to completion via *.state.status and timestamps: queued_at, processed_at, confirmed_at, cancelled_at, rejected_at, failed_at
         */
       interface JobEntity {
         @IsPrimaryKey()
         @IsStringProperty()
         id: string;
 
-        @IsStringProperty()
+        @IsURL()
         type: string;
 
         @IsForeignKey()
@@ -123,8 +143,8 @@
 
       /**
        * Job Input Entity
-      * - type is a URL, it can by dynamically extended, and shall be progrmatically validated, potentially via dynamic job schema registration procedure
-      */
+       * - type is a URL, it can by dynamically extended, and shall be progrmatically validated, potentially via dynamic job schema registration procedure
+       */
       interface JobInputEntity {
         @IsStringProperty()
         id: string;
@@ -137,9 +157,9 @@
 
       /**
        * Job Output Entity
-        * - Job result/output data
-        * - Can be either Result or ResultDataWithTxReceipt
-        */
+       * - Job result/output data
+       * - Can be either Result or ResultDataWithTxReceipt
+       */
       type JobOutputEntityType = Result | ResultWithTxReceipt;
 
       interface ResultWithTxReceipt {
@@ -178,10 +198,10 @@
     ```ts
       /**
        * Tenant
-        * - gets pricing_plan_subscription_id assigned
-        * - Deleted status is terminal
-        * - captures deletion date
-        */
+       * - gets pricing_plan_subscription_id assigned
+       * - Deleted status is terminal
+       * - captures deletion date
+       */
       interface TenantEntity {
         @IsPrimaryKey()
         @IsUUID()
@@ -215,11 +235,11 @@
 
       /**
        * Supported transitions of tenant statuses:
-        * - Active → Suspended: by client or by system admin
-        * - Suspended → Active: by client or by system admin
-        * - Active → Deleted: by client or by system admin (email can be reused)
-        * - Suspended → Deleted: by client or by system admin (email can be reused)
-        */
+       * - Active → Suspended: by client or by system admin
+       * - Suspended → Active: by client or by system admin
+       * - Active → Deleted: by client or by system admin (email can be reused)
+       * - Suspended → Deleted: by client or by system admin (email can be reused)
+       */
       enum TenantStatusEnum {
         Active = 1,
         Suspended = 2,
@@ -238,8 +258,8 @@
     ```ts
       /**
        * Pricing Plan Declaration for tenant subscription
-        * - type is limited to predefined values i.e. dynamic pricing plan extension is not supported
-        */
+       * - type is limited to predefined values i.e. dynamic pricing plan extension is not supported
+       */
       interface PricingPlanDeclarationEntity {
         @IsPrimaryKey()
         @IsUUID()
@@ -267,10 +287,10 @@
     - **Pricing Plan Quota Declaration**
     ```ts
       /**
-      * Pricing Plan Quota Declaration
-        * - type is a URL, it can by dynamically extended, and shall be progrmatically validated
-        * - references `pricing_plan_declaration_id
-        */
+       * Pricing Plan Quota Declaration
+       * - type is a URL, it can by dynamically extended, and shall be progrmatically validated
+       * - references `pricing_plan_declaration_id
+       */
       interface PricingPlanQuotaDeclaration {
         @IsPrimaryKey()
         @IsUUID()
@@ -304,12 +324,12 @@
     ```ts
       /**
        * Pricing Plan Subscription
-        * - isolated to `tenant_id`
-        * - references `pricing_plan_declaration_id`
-        * - Cancelled status is terminal
-        * - captures subscription date
-        * - captures cancellation date
-        */
+       * - isolated to `tenant_id`
+       * - references `pricing_plan_declaration_id`
+       * - Cancelled status is terminal
+       * - captures subscription date
+       * - captures cancellation date
+       */
       interface PricingPlanSubscriptionEntity {
         @IsPrimaryKey()
         @IsUUID()
@@ -341,11 +361,11 @@
 
       /**
        * Supported transitions of pricing plan subscription statuses
-        * - Active → Suspended: Payment failure, compliance issues, manual admin action
-        * - Suspended → Active: Payment resolved, compliance cleared, manual admin action
-        * - Active → Cancelled: Pricing plan cancelled, manual admin action
-        * - Suspended → Cancelled: Pricing plan cancelled, manual admin action
-        */
+       * - Active → Suspended: Payment failure, compliance issues, manual admin action
+       * - Suspended → Active: Payment resolved, compliance cleared, manual admin action
+       * - Active → Cancelled: Pricing plan cancelled, manual admin action
+       * - Suspended → Cancelled: Pricing plan cancelled, manual admin action
+       */
       enum PricingPlanSubscriptionStatusEnum {
         Active = 1,
         Suspended = 2,
@@ -357,13 +377,13 @@
     ```ts
       /**
        * Pricing Plan Quota Usage Event
-        * - type is a URL, it can by dynamically extended, and shall be progrmatically validated
-        *   - {tenant_id}.example.com/{version}/{event_namespace}/{event_id}/{event_type}?{k}={v},{k}={v},{k}={v}
-        *   - example.com/v1/jobs/007/created}?priority=1
-        *   - example.com/v1/jobs/007/completed?compute_ms=10000,compute_bytes=100000
-        *   - example.com/v1/jobs/007/confirmed}?tx_receipt=0x..
-        *   - example.com/v1/jobs/007/failed}?error_code=999,error_message="..."
-        */
+       * - type is a URL, it can by dynamically extended, and shall be progrmatically validated
+       *   - {tenant_id}.example.com/{version}/{event_namespace}/{event_id}/{event_type}?{k}={v},{k}={v},{k}={v}
+       *   - example.com/v1/jobs/007/created}?priority=1
+       *   - example.com/v1/jobs/007/completed?compute_ms=10000,compute_bytes=100000
+       *   - example.com/v1/jobs/007/confirmed}?tx_receipt=0x..
+       *   - example.com/v1/jobs/007/failed}?error_code=999,error_message="..."
+       */
       interface PricingPlanQuotaUsageEventBaseEntity {
         // Common fields
         @IsPrimaryKey()
